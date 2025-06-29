@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__taskmaster-ai__parse_prd",
+      "mcp__taskmaster-ai__get_tasks",
+      "Bash(tm list:*)",
+      "mcp__taskmaster-ai__get_task",
+      "Bash(mkdir:*)",
+      "Bash(php -l:*)",
+      "Bash(find:*)",
+      "mcp__taskmaster-ai__set_task_status",
+      "mcp__taskmaster-ai__update_task",
+      "WebFetch(domain:www.mixcloud.com)",
+      "Bash(php:*)",
+      "Bash(timeout:*)",
+      "mcp__taskmaster-ai__expand_task",
+      "Bash(chmod:*)",
+      "Bash(node:*)",
+      "Bash(npm --version)",
+      "Bash(npm install:*)",
+      "Bash(wp-env:*)",
+      "Bash(npm run build:*)",
+      "Bash(tar:*)",
+      "mcp__puppeteer-mcp-server__puppeteer_navigate",
+      "mcp__puppeteer-mcp-server__puppeteer_screenshot",
+      "mcp__puppeteer-mcp-server__puppeteer_click",
+      "mcp__puppeteer-mcp-server__puppeteer_fill",
+      "mcp__puppeteer-mcp-server__puppeteer_evaluate"
+    ],
+    "deny": []
+  }
+}

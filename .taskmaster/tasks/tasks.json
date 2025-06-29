@@ -1,0 +1,993 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup WordPress Plugin Structure",
+        "description": "Create the basic structure for the WordPress plugin, including main plugin file, readme.txt, and necessary directories.",
+        "details": "1. Create main plugin file 'wp-mixcloud-archives.php'\n2. Set up plugin header with required WordPress metadata\n3. Create 'includes' directory for PHP files\n4. Create 'assets' directory for JS and CSS files\n5. Create 'templates' directory for HTML templates\n6. Write initial readme.txt with plugin description",
+        "testStrategy": "Verify plugin structure using WordPress coding standards. Ensure plugin can be activated without errors in a test WordPress installation.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement Mixcloud API Integration",
+        "description": "Integrate with Mixcloud API v1 to fetch user cloudcasts for the specified account.",
+        "details": "1. Use WordPress HTTP API to make requests to Mixcloud API\n2. Endpoint: https://api.mixcloud.com/{username}/cloudcasts/\n3. Parse JSON response and extract required data\n4. Implement error handling for API failures\n5. Create a class 'Mixcloud_API_Handler' to encapsulate API logic",
+        "testStrategy": "Create unit tests for API calls. Test with mock responses. Verify error handling with intentional API failures.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Mixcloud_API_Handler class",
+            "description": "Implement a class to encapsulate all Mixcloud API logic",
+            "dependencies": [],
+            "details": "Create a new PHP class named 'Mixcloud_API_Handler' with methods for API requests, response parsing, and error handling",
+            "status": "done",
+            "testStrategy": "Unit test the class methods with mock API responses"
+          },
+          {
+            "id": 2,
+            "title": "Implement API request method",
+            "description": "Create a method to send HTTP requests to Mixcloud API using WordPress HTTP API",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement a method that constructs the API endpoint URL and sends GET requests using wp_remote_get() function",
+            "status": "done",
+            "testStrategy": "Test the method with various usernames and error conditions"
+          },
+          {
+            "id": 3,
+            "title": "Develop JSON response parser",
+            "description": "Create a method to parse the JSON response from Mixcloud API",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement a method that takes the API response, decodes the JSON, and extracts required data such as cloudcast titles, URLs, and timestamps",
+            "status": "done",
+            "testStrategy": "Test the parser with sample API responses, including edge cases"
+          },
+          {
+            "id": 4,
+            "title": "Implement error handling",
+            "description": "Add robust error handling for API failures and invalid responses",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Create methods to handle various error scenarios, including network errors, API rate limiting, and invalid JSON responses",
+            "status": "done",
+            "testStrategy": "Simulate various error conditions and verify proper error handling"
+          },
+          {
+            "id": 5,
+            "title": "Create user-facing method for fetching cloudcasts",
+            "description": "Implement a public method to fetch and return user cloudcasts",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create a method that combines all the implemented functionality to fetch cloudcasts for a given username, with proper error handling and data formatting",
+            "status": "done",
+            "testStrategy": "Integration test the method with real Mixcloud API calls and verify the returned data"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Create Admin Settings Page",
+        "description": "Develop an admin panel for plugin configuration under WordPress settings.",
+        "details": "1. Create 'admin' directory for admin-related files\n2. Implement 'WP_Mixcloud_Archives_Admin' class\n3. Add settings page with fields for Mixcloud account name\n4. Include API status monitoring section\n5. Implement settings sanitization and validation\n6. Use WordPress Settings API for form handling",
+        "testStrategy": "Manual testing of admin interface. Verify settings are saved correctly and retrieved on page reload.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create admin directory structure",
+            "description": "Set up the 'admin' directory and necessary files for the admin panel",
+            "dependencies": [],
+            "details": "Create an 'admin' folder in the plugin root directory. Add placeholder files for main admin class, settings page, and any helper functions.",
+            "status": "done",
+            "testStrategy": "Verify the existence and structure of the admin directory and files"
+          },
+          {
+            "id": 2,
+            "title": "Implement WP_Mixcloud_Archives_Admin class",
+            "description": "Develop the main admin class to handle admin-related functionality",
+            "dependencies": [
+              1
+            ],
+            "details": "Create the WP_Mixcloud_Archives_Admin class with methods for initializing admin hooks, registering settings, and rendering the admin page.",
+            "status": "done",
+            "testStrategy": "Unit test the class methods and ensure proper integration with WordPress admin hooks"
+          },
+          {
+            "id": 3,
+            "title": "Create settings page layout",
+            "description": "Design and implement the layout for the admin settings page",
+            "dependencies": [
+              2
+            ],
+            "details": "Create a settings page with sections for Mixcloud account configuration, API status monitoring, and other plugin settings. Use WordPress admin styling for consistency.",
+            "status": "done",
+            "testStrategy": "Visual inspection and automated tests for proper rendering of all page elements"
+          },
+          {
+            "id": 4,
+            "title": "Implement settings fields and validation",
+            "description": "Add form fields for plugin settings and implement data validation",
+            "dependencies": [
+              3
+            ],
+            "details": "Use the WordPress Settings API to add fields for Mixcloud account name and other necessary settings. Implement sanitization and validation functions for all input fields.",
+            "status": "done",
+            "testStrategy": "Test input validation with various data types and edge cases"
+          },
+          {
+            "id": 5,
+            "title": "Add API status monitoring section",
+            "description": "Implement a section to display and monitor Mixcloud API status",
+            "dependencies": [
+              4
+            ],
+            "details": "Create a function to check the Mixcloud API status and display the results in the admin panel. Include error handling and status update functionality.",
+            "status": "done",
+            "testStrategy": "Simulate various API responses and test the display of different status scenarios"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Implement Shortcode Functionality",
+        "description": "Create a shortcode to embed the Mixcloud archives on any page or post.",
+        "details": "1. Register shortcode 'mixcloud_archives'\n2. Implement shortcode handler function\n3. Parse attributes: account and days\n4. Fetch data from Mixcloud API based on shortcode attributes\n5. Return HTML output for shortcode",
+        "testStrategy": "Test shortcode with various attribute combinations. Verify output on front-end matches expected format.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Register 'mixcloud_archives' shortcode",
+            "description": "Create and register the 'mixcloud_archives' shortcode in WordPress",
+            "dependencies": [],
+            "details": "Use add_shortcode() function to register the shortcode 'mixcloud_archives' and link it to a handler function",
+            "status": "done",
+            "testStrategy": "Verify shortcode registration using has_shortcode() function"
+          },
+          {
+            "id": 2,
+            "title": "Implement shortcode handler function",
+            "description": "Create a function to handle the shortcode logic and return the output",
+            "dependencies": [
+              1
+            ],
+            "details": "Define a function that will be called when the shortcode is used, accepting attributes as parameters",
+            "status": "done",
+            "testStrategy": "Test the function with sample attributes and ensure it returns expected output"
+          },
+          {
+            "id": 3,
+            "title": "Parse shortcode attributes",
+            "description": "Extract and validate 'account' and 'days' attributes from the shortcode",
+            "dependencies": [
+              2
+            ],
+            "details": "Use wp_parse_args() to merge provided attributes with default values, ensure 'account' is not empty and 'days' is a positive integer",
+            "status": "done",
+            "testStrategy": "Test with various attribute combinations, including edge cases"
+          },
+          {
+            "id": 4,
+            "title": "Fetch data from Mixcloud API",
+            "description": "Retrieve archive data from Mixcloud API based on shortcode attributes",
+            "dependencies": [
+              3
+            ],
+            "details": "Use WordPress HTTP API to make a GET request to Mixcloud API endpoint, using 'account' and 'days' parameters",
+            "status": "done",
+            "testStrategy": "Mock API responses and test error handling for various scenarios"
+          },
+          {
+            "id": 5,
+            "title": "Generate HTML output for shortcode",
+            "description": "Create HTML markup to display Mixcloud archives data",
+            "dependencies": [
+              4
+            ],
+            "details": "Format the API response data into HTML, possibly using a template for consistency. Include error handling for API failures or no results",
+            "status": "done",
+            "testStrategy": "Validate HTML output for accessibility and proper structure"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Develop Basic Display Layout",
+        "description": "Create a table layout to display Mixcloud shows with required columns.",
+        "details": "1. Create HTML template for table layout\n2. Implement columns: Artwork, Show Title, Player, Show Notes, Date Posted\n3. Use WordPress template functions for output escaping\n4. Implement clickable titles linking to original Mixcloud page\n5. Format date posted using WordPress date formatting functions",
+        "testStrategy": "Visual inspection of table layout. Verify all required columns are present and formatted correctly.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          4
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create HTML structure for table layout",
+            "description": "Develop the basic HTML structure for the table that will display Mixcloud shows",
+            "dependencies": [],
+            "details": "Use <table>, <thead>, and <tbody> tags to create the basic structure. Include columns for Artwork, Show Title, Player, Show Notes, and Date Posted.",
+            "status": "done",
+            "testStrategy": "Validate HTML structure using W3C Markup Validation Service"
+          },
+          {
+            "id": 2,
+            "title": "Implement column content using WordPress template functions",
+            "description": "Populate each column with the required content using WordPress template functions and proper output escaping",
+            "dependencies": [
+              1
+            ],
+            "details": "Use functions like get_post_meta() to retrieve data, and esc_html() or esc_url() for output escaping. Implement the player using oEmbed or a custom player solution.",
+            "status": "done",
+            "testStrategy": "Test with various post types to ensure correct data retrieval and escaping"
+          },
+          {
+            "id": 3,
+            "title": "Create clickable show titles",
+            "description": "Make show titles clickable and link them to the original Mixcloud page",
+            "dependencies": [
+              2
+            ],
+            "details": "Wrap the show title in an <a> tag, use esc_url() for the href attribute, and set the target attribute to '_blank' for opening in a new tab.",
+            "status": "done",
+            "testStrategy": "Click testing to ensure links open correctly and to the right Mixcloud pages"
+          },
+          {
+            "id": 4,
+            "title": "Format and display date posted",
+            "description": "Use WordPress date formatting functions to properly format and display the date posted for each show",
+            "dependencies": [
+              2
+            ],
+            "details": "Retrieve the post date using get_the_date() or get_post_meta(), then format it using date_i18n() for localization support.",
+            "status": "done",
+            "testStrategy": "Test with different date formats and ensure proper localization"
+          },
+          {
+            "id": 5,
+            "title": "Apply CSS styling to table layout",
+            "description": "Style the table layout to improve readability and match the overall site design",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create CSS rules for table layout, cell padding, font styles, and responsive design. Ensure the player fits well within its cell.",
+            "status": "done",
+            "testStrategy": "Test responsiveness on various screen sizes and browsers"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Integrate Mixcloud Embedded Player",
+        "description": "Implement embedded Mixcloud player for each show in the table.",
+        "details": "1. Research Mixcloud player embed code structure\n2. Implement player embedding in table layout\n3. Ensure players are click-to-play (no auto-start)\n4. Implement lazy loading for embedded players\n5. Test cross-browser compatibility",
+        "testStrategy": "Manual testing of player functionality. Verify lazy loading works as expected. Test on multiple browsers.",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Research Mixcloud API and embed options",
+            "description": "Investigate Mixcloud's API documentation and embed options to determine the best approach for integration.",
+            "dependencies": [],
+            "details": "Review Mixcloud's developer documentation, focusing on player embedding and customization options. Identify any limitations or requirements for embedding.",
+            "status": "done",
+            "testStrategy": "Create a test document with various embed code examples to verify functionality."
+          },
+          {
+            "id": 2,
+            "title": "Implement Mixcloud player embedding in table layout",
+            "description": "Integrate the Mixcloud embedded player into the existing table layout for each show.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use the research findings to implement the embed code within the table structure. Ensure proper sizing and alignment within table cells.",
+            "status": "done",
+            "testStrategy": "Test the embedded player in various table layouts to ensure proper display and functionality."
+          },
+          {
+            "id": 3,
+            "title": "Configure click-to-play functionality",
+            "description": "Ensure that the embedded Mixcloud players do not auto-start and only play when clicked by the user.",
+            "dependencies": [
+              2
+            ],
+            "details": "Modify the embed code or use Mixcloud API options to disable auto-play. Implement a play button or overlay to initiate playback.",
+            "status": "done",
+            "testStrategy": "Verify that players do not auto-start on page load and only play when explicitly triggered by user interaction."
+          },
+          {
+            "id": 4,
+            "title": "Implement lazy loading for embedded players",
+            "description": "Optimize page performance by implementing lazy loading for the Mixcloud players.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Use a lazy loading library or implement custom JavaScript to load players only when they come into view. Consider using Intersection Observer API for modern browsers.",
+            "status": "done",
+            "testStrategy": "Test page load times with and without lazy loading. Verify that players load correctly when scrolled into view."
+          },
+          {
+            "id": 5,
+            "title": "Perform cross-browser compatibility testing",
+            "description": "Ensure the embedded Mixcloud players function correctly across different browsers and devices.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Test the implementation on major browsers (Chrome, Firefox, Safari, Edge) and mobile devices. Address any browser-specific issues or inconsistencies.",
+            "status": "done",
+            "testStrategy": "Create a test matrix covering different browsers and devices. Document and resolve any compatibility issues encountered."
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Implement Date Range Selection",
+        "description": "Add date picker functionality for custom date range selection.",
+        "details": "1. Research and select a lightweight date picker library\n2. Implement date picker in the plugin's front-end\n3. Add JavaScript to handle date range selection\n4. Implement AJAX call to refresh content based on selected dates\n5. Update shortcode handler to accept custom date ranges",
+        "testStrategy": "Test date picker UI. Verify content updates correctly when date range is changed. Test edge cases (e.g., invalid date ranges).",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Research and select date picker library",
+            "description": "Evaluate lightweight date picker libraries compatible with the plugin's requirements",
+            "dependencies": [],
+            "details": "Compare at least 3 popular date picker libraries (e.g., Flatpickr, Pikaday, Air Datepicker) based on size, features, and ease of integration",
+            "status": "done",
+            "testStrategy": "Create a comparison matrix and test each library in a sandbox environment"
+          },
+          {
+            "id": 2,
+            "title": "Integrate date picker into plugin front-end",
+            "description": "Add the selected date picker library to the plugin's front-end code",
+            "dependencies": [
+              1
+            ],
+            "details": "Include necessary CSS and JavaScript files, initialize the date picker on appropriate input fields",
+            "status": "done",
+            "testStrategy": "Verify date picker appears and functions correctly on different browsers and devices"
+          },
+          {
+            "id": 3,
+            "title": "Implement date range selection logic",
+            "description": "Write JavaScript to handle user interactions with the date picker for range selection",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement functions to capture start and end dates, validate selections, and format date ranges for further processing",
+            "status": "done",
+            "testStrategy": "Unit test date handling functions and manually test various date range selections"
+          },
+          {
+            "id": 4,
+            "title": "Develop AJAX functionality for content refresh",
+            "description": "Create AJAX call to server to fetch updated content based on selected date range",
+            "dependencies": [
+              3
+            ],
+            "details": "Implement JavaScript function to send AJAX request with date range parameters, handle server response, and update DOM with new content",
+            "status": "done",
+            "testStrategy": "Use browser developer tools to monitor AJAX requests and responses, test with various date ranges"
+          },
+          {
+            "id": 5,
+            "title": "Update shortcode handler for custom date ranges",
+            "description": "Modify the plugin's shortcode handler to process and display content for user-selected date ranges",
+            "dependencies": [
+              4
+            ],
+            "details": "Extend shortcode attributes to accept start and end dates, update database queries to filter content based on date range, ensure backwards compatibility",
+            "status": "done",
+            "testStrategy": "Create test cases with various date ranges and verify correct content is displayed for each scenario"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Develop Pagination System",
+        "description": "Implement pagination for navigating through multiple pages of shows.",
+        "details": "1. Implement pagination logic in PHP\n2. Create pagination controls: [Back] 1 ... 7 [Next]\n3. Make page numbers clickable\n4. Implement AJAX-based page navigation\n5. Update shortcode handler to accept page parameter",
+        "testStrategy": "Test pagination controls. Verify correct shows are displayed on each page. Test edge cases (first page, last page).",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Pagination Logic in PHP",
+            "description": "Create the backend logic to handle pagination calculations and data retrieval.",
+            "dependencies": [],
+            "details": "Develop PHP functions to calculate total pages, current page, and items per page. Implement database queries to fetch the correct subset of shows based on pagination parameters.",
+            "status": "done",
+            "testStrategy": "Unit test pagination calculations with various input scenarios. Integration test database queries with mock data."
+          },
+          {
+            "id": 2,
+            "title": "Design and Implement Pagination Controls",
+            "description": "Create the visual elements for pagination navigation.",
+            "dependencies": [
+              1
+            ],
+            "details": "Design and implement HTML/CSS for pagination controls, including 'Back' and 'Next' buttons, and page numbers. Ensure responsive design for various screen sizes.",
+            "status": "done",
+            "testStrategy": "Conduct visual tests across different browsers and devices. Perform accessibility testing for navigation elements."
+          },
+          {
+            "id": 3,
+            "title": "Make Page Numbers Clickable",
+            "description": "Implement functionality to make individual page numbers interactive.",
+            "dependencies": [
+              2
+            ],
+            "details": "Add JavaScript event listeners to page number elements. Implement logic to update the current page and trigger content refresh when a page number is clicked.",
+            "status": "done",
+            "testStrategy": "Create automated tests to simulate user clicks on different page numbers and verify correct behavior."
+          },
+          {
+            "id": 4,
+            "title": "Implement AJAX-based Page Navigation",
+            "description": "Enable smooth, dynamic content updates without full page reloads.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Develop JavaScript functions to send AJAX requests for new page content. Update the DOM with received data without refreshing the entire page. Implement error handling for failed requests.",
+            "status": "done",
+            "testStrategy": "Use Jest or similar framework to test AJAX functionality. Simulate various network conditions to ensure robust error handling."
+          },
+          {
+            "id": 5,
+            "title": "Update Shortcode Handler for Page Parameter",
+            "description": "Modify the existing shortcode handler to accept and process a page parameter.",
+            "dependencies": [
+              1,
+              4
+            ],
+            "details": "Update the PHP shortcode handler to accept a 'page' parameter. Integrate this parameter with the pagination logic to display the correct page of shows. Ensure backward compatibility for existing shortcode usage.",
+            "status": "done",
+            "testStrategy": "Create unit tests for the updated shortcode handler. Perform integration tests with various shortcode configurations including the new page parameter."
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Implement Social Sharing Buttons",
+        "description": "Add social sharing buttons for Facebook, Twitter, and direct link sharing.",
+        "details": "1. Research and implement Open Graph meta tags\n2. Create social sharing buttons HTML structure\n3. Implement sharing functionality using respective platform APIs\n4. Add click tracking for share buttons\n5. Ensure shared content includes show details",
+        "testStrategy": "Test each sharing button individually. Verify shared content on each platform. Check click tracking functionality.",
+        "priority": "low",
+        "dependencies": [
+          5
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Open Graph meta tags",
+            "description": "Research and implement Open Graph meta tags for improved social sharing",
+            "dependencies": [],
+            "details": "Add og:title, og:description, og:image, og:url tags to the head of the HTML document",
+            "status": "done",
+            "testStrategy": "Validate Open Graph tags using Facebook's Sharing Debugger tool"
+          },
+          {
+            "id": 2,
+            "title": "Create social sharing buttons HTML structure",
+            "description": "Design and implement the HTML structure for Facebook, Twitter, and direct link sharing buttons",
+            "dependencies": [],
+            "details": "Use appropriate icons and labels for each platform, ensure accessibility with proper aria attributes",
+            "status": "done",
+            "testStrategy": "Verify buttons render correctly across different browsers and devices"
+          },
+          {
+            "id": 3,
+            "title": "Implement Facebook sharing functionality",
+            "description": "Integrate Facebook's sharing API to enable one-click sharing",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Use Facebook's JavaScript SDK to implement the sharing dialog, ensure proper formatting of shared content",
+            "status": "done",
+            "testStrategy": "Test sharing functionality on Facebook's developers test accounts"
+          },
+          {
+            "id": 4,
+            "title": "Implement Twitter sharing functionality",
+            "description": "Integrate Twitter's sharing API to enable one-click tweeting",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Use Twitter's Web Intent functionality to create pre-populated tweets with show details",
+            "status": "done",
+            "testStrategy": "Verify tweet content and formatting using Twitter's preview tool"
+          },
+          {
+            "id": 5,
+            "title": "Implement click tracking for share buttons",
+            "description": "Add analytics tracking for all social sharing button clicks",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Use Google Analytics or a similar tool to track click events on each sharing button",
+            "status": "done",
+            "testStrategy": "Confirm tracking events are properly recorded in the analytics dashboard"
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Develop Custom Styling",
+        "description": "Create custom CSS to match the OnAir2 theme aesthetic and ensure responsive design.",
+        "details": "1. Create custom stylesheet 'wp-mixcloud-archives.css'\n2. Implement dark mode aesthetic (black/dark gray backgrounds)\n3. Use blue accent color (#1863dc) as specified\n4. Ensure high contrast design\n5. Use modern sans-serif typography\n6. Implement responsive design for mobile/tablet\n7. Style pagination controls to match unified theme",
+        "testStrategy": "Visual inspection across different devices and screen sizes. Verify theme compatibility and responsiveness.",
+        "priority": "medium",
+        "dependencies": [
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up base stylesheet structure",
+            "description": "Create the custom stylesheet 'wp-mixcloud-archives.css' and define the basic structure for the dark mode aesthetic",
+            "dependencies": [],
+            "details": "Create file, set up CSS variables for colors (black/dark gray backgrounds, blue accent #1863dc), define global styles for body and main containers",
+            "status": "done",
+            "testStrategy": "Verify file creation and basic color application in browser inspector"
+          },
+          {
+            "id": 2,
+            "title": "Implement typography and contrast",
+            "description": "Apply modern sans-serif typography and ensure high contrast design throughout the stylesheet",
+            "dependencies": [
+              1
+            ],
+            "details": "Choose and apply sans-serif font family, set font sizes and weights, adjust text and background colors for optimal contrast",
+            "status": "done",
+            "testStrategy": "Use accessibility tools to check contrast ratios and readability"
+          },
+          {
+            "id": 3,
+            "title": "Style main content elements",
+            "description": "Apply custom styles to main content elements like headers, paragraphs, lists, and links",
+            "dependencies": [
+              2
+            ],
+            "details": "Style h1-h6 tags, paragraphs, unordered and ordered lists, and anchor tags to match the OnAir2 theme aesthetic",
+            "status": "done",
+            "testStrategy": "Visual inspection and cross-browser testing of styled elements"
+          },
+          {
+            "id": 4,
+            "title": "Develop responsive design",
+            "description": "Implement responsive design for mobile and tablet devices using media queries",
+            "dependencies": [
+              3
+            ],
+            "details": "Create breakpoints for different screen sizes, adjust layout and font sizes for smaller screens, ensure proper spacing and readability on mobile devices",
+            "status": "done",
+            "testStrategy": "Test on various devices and use browser dev tools to simulate different screen sizes"
+          },
+          {
+            "id": 5,
+            "title": "Style pagination controls",
+            "description": "Design and implement styles for pagination controls to match the unified theme",
+            "dependencies": [
+              4
+            ],
+            "details": "Style pagination buttons, current page indicator, and hover states using the theme's color scheme and typography",
+            "status": "done",
+            "testStrategy": "Test pagination functionality and appearance across different page numbers and screen sizes"
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Implement Error Handling and Fallbacks",
+        "description": "Develop comprehensive error handling for API failures and other potential issues.",
+        "details": "1. Implement try-catch blocks for API calls\n2. Create user-friendly error messages\n3. Develop fallback content for when API is unavailable\n4. Log errors for admin review\n5. Implement retry mechanism for temporary API failures",
+        "testStrategy": "Simulate various error conditions (API down, network issues, etc.). Verify graceful degradation and appropriate error messages.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          4
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Try-Catch Blocks for API Calls",
+            "description": "Wrap all API calls in try-catch blocks to handle exceptions gracefully",
+            "dependencies": [],
+            "details": "Identify all API calls in the codebase and implement try-catch blocks around them. Handle specific exceptions like network errors, timeouts, and API-specific errors.",
+            "status": "done",
+            "testStrategy": "Create unit tests with mocked API responses to simulate various error scenarios"
+          },
+          {
+            "id": 2,
+            "title": "Create User-Friendly Error Messages",
+            "description": "Design and implement a system for displaying user-friendly error messages",
+            "dependencies": [
+              1
+            ],
+            "details": "Develop a set of clear, concise error messages for different types of failures. Implement a mechanism to map caught exceptions to appropriate user-facing messages.",
+            "status": "done",
+            "testStrategy": "Conduct user testing to ensure error messages are understandable and helpful"
+          },
+          {
+            "id": 3,
+            "title": "Develop Fallback Content for API Unavailability",
+            "description": "Create static or cached content to display when the API is unavailable",
+            "dependencies": [
+              1
+            ],
+            "details": "Design and implement a system for storing and serving fallback content. This could include cached data, placeholder content, or offline-mode functionality.",
+            "status": "done",
+            "testStrategy": "Test the application with the API intentionally disabled to ensure fallback content is displayed correctly"
+          },
+          {
+            "id": 4,
+            "title": "Implement Error Logging System",
+            "description": "Set up a robust error logging system for admin review",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement a logging mechanism that captures detailed error information, including stack traces, request data, and system state. Set up a secure admin interface for reviewing logs.",
+            "status": "done",
+            "testStrategy": "Verify that logs are being correctly generated and stored by intentionally triggering various error scenarios"
+          },
+          {
+            "id": 5,
+            "title": "Develop Retry Mechanism for Temporary API Failures",
+            "description": "Implement an intelligent retry system for handling temporary API failures",
+            "dependencies": [
+              1,
+              4
+            ],
+            "details": "Create a configurable retry mechanism that attempts to re-execute failed API calls. Implement exponential backoff to avoid overwhelming the API. Ensure the system can distinguish between temporary and permanent failures.",
+            "status": "done",
+            "testStrategy": "Simulate intermittent API failures and verify that the retry mechanism works as expected without causing excessive delays"
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Optimize Performance",
+        "description": "Implement performance optimizations to ensure fast page load times.",
+        "details": "1. Optimize API calls with reasonable timeouts\n2. Implement lazy loading for embedded players\n3. Minify CSS and JavaScript assets\n4. Use WordPress transients for short-term data caching\n5. Implement AJAX loading for pagination and date range changes",
+        "testStrategy": "Conduct performance testing using tools like WebPageTest. Verify page load time is under 3 seconds. Profile code for bottlenecks.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          6,
+          10
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Optimize API Calls",
+            "description": "Implement reasonable timeouts and error handling for API calls to improve performance and user experience.",
+            "dependencies": [],
+            "details": "Review existing API calls, set appropriate timeout values, implement retry logic, and add error handling to gracefully manage failed requests.",
+            "status": "done",
+            "testStrategy": "Use automated tests to verify API call performance and error handling under various network conditions."
+          },
+          {
+            "id": 2,
+            "title": "Implement Lazy Loading",
+            "description": "Implement lazy loading for embedded players to reduce initial page load time.",
+            "dependencies": [],
+            "details": "Use JavaScript to defer loading of embedded players until they are close to entering the viewport, reducing initial page load time and improving perceived performance.",
+            "status": "done",
+            "testStrategy": "Conduct user experience tests to ensure smooth loading of embedded players as users scroll the page."
+          },
+          {
+            "id": 3,
+            "title": "Minify and Compress Assets",
+            "description": "Minify CSS and JavaScript assets, and implement proper compression techniques for all static assets.",
+            "dependencies": [],
+            "details": "Use tools like UglifyJS for JavaScript and cssnano for CSS to minify assets. Implement Gzip or Brotli compression on the server for all static assets including HTML, CSS, JavaScript, and images.",
+            "status": "done",
+            "testStrategy": "Compare file sizes and load times before and after minification and compression to quantify improvements."
+          },
+          {
+            "id": 4,
+            "title": "Implement WordPress Transients",
+            "description": "Use WordPress transients for short-term data caching to reduce database queries and improve response times.",
+            "dependencies": [
+              1
+            ],
+            "details": "Identify frequently accessed, computationally expensive, or slow-changing data. Implement WordPress transients to cache this data, setting appropriate expiration times based on data volatility.",
+            "status": "done",
+            "testStrategy": "Monitor database query counts and response times before and after implementing transients to measure performance improvements."
+          },
+          {
+            "id": 5,
+            "title": "Implement AJAX Loading",
+            "description": "Use AJAX to load content for pagination and date range changes without full page reloads.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Refactor pagination and date range selection to use AJAX calls for content updates. Update the DOM with received data instead of reloading the entire page. Implement proper loading indicators and error handling.",
+            "status": "done",
+            "testStrategy": "Perform user testing to ensure smooth transitions during pagination and date range changes, and verify improved perceived performance."
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Implement Security Measures",
+        "description": "Enhance plugin security through input sanitization and output escaping.",
+        "details": "1. Sanitize all user inputs (e.g., date picker inputs)\n2. Implement nonce checks for form submissions\n3. Use WordPress escaping functions for all output\n4. Validate and sanitize API responses\n5. Implement capability checks for admin functions",
+        "testStrategy": "Conduct security audit. Test with malformed inputs. Attempt XSS attacks to verify prevention.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          4,
+          5
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Input Sanitization",
+            "description": "Create a comprehensive input sanitization system for all user inputs, including date picker inputs.",
+            "dependencies": [],
+            "details": "Use WordPress functions like sanitize_text_field(), sanitize_email(), and wp_kses() to clean user inputs. Create custom sanitization functions for complex inputs.",
+            "status": "done",
+            "testStrategy": "Create unit tests for each sanitization function, including edge cases and malicious input attempts."
+          },
+          {
+            "id": 2,
+            "title": "Implement Nonce Checks",
+            "description": "Add nonce checks to all form submissions to prevent CSRF attacks.",
+            "dependencies": [],
+            "details": "Use wp_create_nonce() to generate nonces, wp_nonce_field() to add nonce fields to forms, and wp_verify_nonce() to validate nonces on form submission.",
+            "status": "done",
+            "testStrategy": "Create integration tests simulating form submissions with valid and invalid nonces."
+          },
+          {
+            "id": 3,
+            "title": "Implement Output Escaping",
+            "description": "Use WordPress escaping functions for all output to prevent XSS attacks.",
+            "dependencies": [],
+            "details": "Apply appropriate escaping functions like esc_html(), esc_url(), esc_attr(), and esc_js() to all output. Create a code review checklist to ensure all output is properly escaped.",
+            "status": "done",
+            "testStrategy": "Develop automated tests to check for unescaped output in templates and PHP files."
+          },
+          {
+            "id": 4,
+            "title": "Implement API Response Validation",
+            "description": "Create a system to validate and sanitize all API responses before processing or displaying data.",
+            "dependencies": [
+              1
+            ],
+            "details": "Develop a set of validation functions for different types of API responses. Use JSON schema validation for structured data. Apply sanitization functions from subtask 1 to cleaned API data.",
+            "status": "done",
+            "testStrategy": "Create mock API responses with various edge cases and test the validation and sanitization process."
+          },
+          {
+            "id": 5,
+            "title": "Implement Capability Checks",
+            "description": "Add capability checks for all admin functions to ensure proper user permissions.",
+            "dependencies": [],
+            "details": "Use current_user_can() to check user capabilities before allowing access to admin functions. Create a mapping of plugin features to required capabilities. Update all admin-related functions to include these checks.",
+            "status": "done",
+            "testStrategy": "Create unit tests with users of different roles to ensure proper access control for each admin function."
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Write Plugin Documentation",
+        "description": "Create comprehensive documentation for plugin usage and configuration.",
+        "details": "1. Update readme.txt with full plugin description\n2. Write installation instructions\n3. Document shortcode usage and parameters\n4. Create admin guide for plugin configuration\n5. Document any known limitations or compatibility issues",
+        "testStrategy": "Review documentation for completeness and clarity. Have a non-technical user attempt to use the plugin based solely on documentation.",
+        "priority": "low",
+        "dependencies": [
+          1,
+          3,
+          4
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update readme.txt",
+            "description": "Revise and expand the readme.txt file with a comprehensive plugin description",
+            "dependencies": [],
+            "details": "Include features, benefits, and use cases. Ensure the description is clear and engaging for potential users.",
+            "status": "done",
+            "testStrategy": "Review the updated readme.txt for completeness and clarity"
+          },
+          {
+            "id": 2,
+            "title": "Create installation guide",
+            "description": "Write step-by-step installation instructions for the plugin",
+            "dependencies": [],
+            "details": "Cover both manual installation and installation via WordPress admin panel. Include any prerequisites or server requirements.",
+            "status": "done",
+            "testStrategy": "Follow the instructions on a test site to verify accuracy"
+          },
+          {
+            "id": 3,
+            "title": "Document shortcode usage",
+            "description": "Provide detailed documentation on available shortcodes and their parameters",
+            "dependencies": [],
+            "details": "List all shortcodes, explain their purpose, and describe each parameter with examples of usage.",
+            "status": "done",
+            "testStrategy": "Test each documented shortcode to ensure accuracy"
+          },
+          {
+            "id": 4,
+            "title": "Write admin configuration guide",
+            "description": "Create a comprehensive guide for configuring the plugin in the WordPress admin panel",
+            "dependencies": [],
+            "details": "Include screenshots, explain each setting, and provide best practices for optimal configuration.",
+            "status": "done",
+            "testStrategy": "Have a non-developer follow the guide to set up the plugin"
+          },
+          {
+            "id": 5,
+            "title": "Document limitations and compatibility",
+            "description": "Compile a list of known limitations and compatibility issues",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Research and document any conflicts with other plugins, theme compatibility issues, and performance limitations.",
+            "status": "done",
+            "testStrategy": "Verify the list with the development team and through testing"
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "title": "Conduct Final Testing and Bug Fixes",
+        "description": "Perform comprehensive testing and fix any identified bugs.",
+        "details": "1. Develop a test plan covering all plugin functionality\n2. Conduct unit testing for all PHP classes\n3. Perform integration testing with WordPress\n4. Test on various WordPress versions (6.8+)\n5. Conduct cross-browser testing\n6. Perform mobile/responsive design testing\n7. Fix any bugs identified during testing",
+        "testStrategy": "Execute test plan. Use automated testing where possible. Conduct manual testing for UI/UX elements. Verify all acceptance criteria are met.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Execute Comprehensive Test Plan",
+            "description": "Implement and carry out the developed test plan covering all plugin functionality",
+            "dependencies": [],
+            "details": "Use the existing test plan to systematically test all plugin features, including unit tests for PHP classes, integration with WordPress, and compatibility with various WordPress versions (6.8+)",
+            "status": "done",
+            "testStrategy": "Automated and manual testing following the established test plan"
+          },
+          {
+            "id": 2,
+            "title": "Perform Cross-Browser Testing",
+            "description": "Test the plugin across multiple browsers to ensure consistent functionality",
+            "dependencies": [
+              1
+            ],
+            "details": "Test on Chrome, Firefox, Safari, Edge, and Internet Explorer (if applicable). Document any browser-specific issues encountered",
+            "status": "done",
+            "testStrategy": "Manual testing using browser developer tools and cross-browser testing platforms"
+          },
+          {
+            "id": 3,
+            "title": "Conduct Mobile and Responsive Design Testing",
+            "description": "Verify plugin functionality and appearance on various mobile devices and screen sizes",
+            "dependencies": [
+              1
+            ],
+            "details": "Test on iOS and Android devices, as well as different screen resolutions. Ensure responsive design principles are properly implemented",
+            "status": "done",
+            "testStrategy": "Use of physical devices and emulators/simulators for comprehensive mobile testing"
+          },
+          {
+            "id": 4,
+            "title": "Identify and Categorize Bugs",
+            "description": "Compile a list of all bugs identified during the testing phases and categorize them by severity",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Create a detailed bug report for each issue, including steps to reproduce, expected vs. actual behavior, and relevant screenshots or error logs",
+            "status": "done",
+            "testStrategy": "Utilize bug tracking software to manage and prioritize identified issues"
+          },
+          {
+            "id": 5,
+            "title": "Fix Identified Bugs and Perform Regression Testing",
+            "description": "Address all identified bugs and conduct regression testing to ensure fixes don't introduce new issues",
+            "dependencies": [
+              4
+            ],
+            "details": "Systematically fix bugs starting with high-priority issues. After each fix, perform regression testing to verify the fix and ensure no new problems are introduced",
+            "status": "done",
+            "testStrategy": "Combination of unit tests, integration tests, and manual testing to verify bug fixes and overall plugin stability"
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-06-29T01:23:35.165Z",
+      "updated": "2025-06-29T17:21:02.249Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
