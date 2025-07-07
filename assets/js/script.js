@@ -64,9 +64,9 @@
             const embedParams = {
                 feed: encodeURIComponent(url),
                 hide_cover: '1',
-                mini: '0', 
+                mini: '1', // Use mini player
                 light: '0', // Dark theme player
-                hide_artwork: '0',
+                hide_artwork: '1', // Hide artwork in player
                 autoplay: '1'
             };
             
@@ -77,7 +77,7 @@
             const iframe = document.createElement('iframe');
             iframe.src = embedUrl;
             iframe.width = '100%';
-            iframe.height = '120';
+            iframe.height = '60'; // Reduced height for mini player
             iframe.frameBorder = '0';
             iframe.allowFullscreen = true;
             iframe.title = 'Mixcloud player for ' + name;
@@ -707,6 +707,44 @@
     }
     
     /**
+     * Initialize compact pagination functionality
+     */
+    function initCompactPagination() {
+        const compactPaginationContainers = document.querySelectorAll('.mixcloud-compact-pagination');
+        
+        compactPaginationContainers.forEach(function(container) {
+            // Get account from the parent container
+            const archiveContainer = container.closest('.mixcloud-archives-container');
+            const account = archiveContainer ? archiveContainer.getAttribute('data-account') : null;
+            
+            if (!account) return;
+            
+            // Handle compact pagination button clicks
+            const buttons = container.querySelectorAll('.mixcloud-compact-pagination-btn');
+            buttons.forEach(function(button) {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const page = this.getAttribute('data-page');
+                    if (page && !this.classList.contains('mixcloud-compact-pagination-disabled')) {
+                        navigateToPage(account, parseInt(page));
+                    }
+                });
+            });
+            
+            // Handle keyboard navigation for compact pagination
+            buttons.forEach(function(button) {
+                button.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+            });
+        });
+    }
+    
+    /**
      * Navigate to a specific page with enhanced AJAX handling
      * 
      * @param {string} account Account name
@@ -782,6 +820,7 @@
                 initPlayCountAnimations();
                 initFilters();
                 initPagination(); // Re-init pagination for new controls
+                initCompactPagination(); // Re-init compact pagination for new controls
                 
                 // Scroll to top of container with smooth animation
                 container.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -997,6 +1036,7 @@
         handleArtworkErrors();
         initDateFiltering();
         initPagination();
+        initCompactPagination();
         initSocialSharing();
     }
 

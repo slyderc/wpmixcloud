@@ -41,7 +41,9 @@
       "Bash(curl:*)",
       "Bash(open:*)",
       "Bash(grep:*)",
-      "mcp__puppeteer-mcp-server__puppeteer_hover"
+      "mcp__puppeteer-mcp-server__puppeteer_hover",
+      "Bash(git push:*)",
+      "Bash(true)"
     ],
     "deny": []
   }

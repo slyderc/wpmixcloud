@@ -726,7 +726,97 @@ class WP_Mixcloud_Archives {
         
         $html .= '</ul>';
         $html .= '</div>';
+        
+        // AIDEV-NOTE: Add compact pagination controls on the right side
+        if (!empty($options['show_pagination']) && !empty($options['pagination']) && $options['pagination']['total_pages'] > 1) {
+            $html .= $this->generate_compact_pagination_html($options['pagination'], $options['account']);
+        }
+        
         $html .= '</div>';
+        
+        return $html;
+    }
+    
+    /**
+     * Generate compact pagination controls for header bar
+     *
+     * @param array  $pagination Pagination information
+     * @param string $account    Mixcloud account name
+     * @return string            Compact pagination HTML
+     */
+    private function generate_compact_pagination_html($pagination, $account) {
+        $html = '<div class="mixcloud-compact-pagination">';
+        
+        // Navigation buttons
+        $html .= '<div class="mixcloud-compact-pagination-nav">';
+        
+        // Previous button
+        if ($pagination['has_prev']) {
+            $html .= '<button type="button" class="mixcloud-compact-pagination-btn" ' .
+                     'data-page="' . esc_attr($pagination['prev_page']) . '" ' .
+                     'data-account="' . esc_attr($account) . '" ' .
+                     'aria-label="' . esc_attr__('Previous page', 'wp-mixcloud-archives') . '">';
+            $html .= '‹';
+            $html .= '</button>';
+        } else {
+            $html .= '<span class="mixcloud-compact-pagination-btn mixcloud-compact-pagination-disabled">';
+            $html .= '‹';
+            $html .= '</span>';
+        }
+        
+        // Current page indicator (show max 3 pages around current)
+        $current_page = $pagination['current_page'];
+        $total_pages = $pagination['total_pages'];
+        
+        // Show current page
+        $html .= '<span class="mixcloud-compact-pagination-btn mixcloud-compact-pagination-current">';
+        $html .= esc_html($current_page);
+        $html .= '</span>';
+        
+        // Show next page if available
+        if ($current_page < $total_pages) {
+            $next_page = $current_page + 1;
+            $html .= '<button type="button" class="mixcloud-compact-pagination-btn" ' .
+                     'data-page="' . esc_attr($next_page) . '" ' .
+                     'data-account="' . esc_attr($account) . '" ' .
+                     'aria-label="' . esc_attr(sprintf(__('Go to page %d', 'wp-mixcloud-archives'), $next_page)) . '">';
+            $html .= esc_html($next_page);
+            $html .= '</button>';
+        }
+        
+        // Show page after next if available
+        if ($current_page < $total_pages - 1) {
+            $next_next_page = $current_page + 2;
+            $html .= '<button type="button" class="mixcloud-compact-pagination-btn" ' .
+                     'data-page="' . esc_attr($next_next_page) . '" ' .
+                     'data-account="' . esc_attr($account) . '" ' .
+                     'aria-label="' . esc_attr(sprintf(__('Go to page %d', 'wp-mixcloud-archives'), $next_next_page)) . '">';
+            $html .= esc_html($next_next_page);
+            $html .= '</button>';
+        }
+        
+        // Next button
+        if ($pagination['has_next']) {
+            $html .= '<button type="button" class="mixcloud-compact-pagination-btn" ' .
+                     'data-page="' . esc_attr($pagination['next_page']) . '" ' .
+                     'data-account="' . esc_attr($account) . '" ' .
+                     'aria-label="' . esc_attr__('Next page', 'wp-mixcloud-archives') . '">';
+            $html .= '›';
+            $html .= '</button>';
+        } else {
+            $html .= '<span class="mixcloud-compact-pagination-btn mixcloud-compact-pagination-disabled">';
+            $html .= '›';
+            $html .= '</span>';
+        }
+        
+        $html .= '</div>'; // .mixcloud-compact-pagination-nav
+        
+        // Page info
+        $html .= '<div class="mixcloud-compact-pagination-info">';
+        $html .= esc_html(sprintf(__('Page %d/%d', 'wp-mixcloud-archives'), $current_page, $total_pages));
+        $html .= '</div>';
+        
+        $html .= '</div>'; // .mixcloud-compact-pagination
         
         return $html;
     }
