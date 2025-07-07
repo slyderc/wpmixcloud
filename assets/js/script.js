@@ -8,103 +8,268 @@
     'use strict';
 
     /**
-     * Initialize Mixcloud modal player functionality
+     * Initialize Mixcloud inline player functionality
      */
     function initMixcloudPlayers() {
-        const artworkElements = document.querySelectorAll('.mixcloud-card-artwork');
-        const modal = document.getElementById('mixcloud-player-modal');
-        const modalContent = document.querySelector('.mixcloud-modal-player-container');
-        const closeBtn = document.querySelector('.mixcloud-modal-close');
+        const playButtons = document.querySelectorAll('.mixcloud-play-button');
+        let currentlyPlaying = null;
         
-        if (!modal || !modalContent || !closeBtn) {
-            return;
-        }
-
-        // Add click handlers to artwork elements
-        artworkElements.forEach(function(artwork) {
-            artwork.addEventListener('click', function() {
-                const cloudcastKey = artwork.getAttribute('data-cloudcast-key');
-                const cloudcastUrl = artwork.getAttribute('data-cloudcast-url');
-                const cloudcastName = artwork.getAttribute('data-cloudcast-name');
+        // Add click handlers to play buttons
+        playButtons.forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const listItem = button.closest('.mixcloud-list-item');
+                const playerContainer = listItem.querySelector('.mixcloud-inline-player');
+                const cloudcastUrl = button.getAttribute('data-cloudcast-url');
+                const cloudcastName = button.getAttribute('data-cloudcast-name');
+                const cloudcastKey = button.getAttribute('data-cloudcast-key');
                 
-                if (cloudcastUrl) {
-                    openMixcloudModal(modal, modalContent, cloudcastUrl, cloudcastName);
+                if (playerContainer && cloudcastUrl) {
+                    toggleInlinePlayer(listItem, playerContainer, cloudcastUrl, cloudcastName, cloudcastKey);
                 }
             });
         });
-
-        // Close modal handlers
-        closeBtn.addEventListener('click', function() {
-            closeMixcloudModal(modal, modalContent);
-        });
-
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                closeMixcloudModal(modal, modalContent);
+        
+        // Function to toggle inline player
+        function toggleInlinePlayer(listItem, container, url, name, key) {
+            const isCurrentlyOpen = container.style.display === 'block';
+            
+            // Close any currently open player
+            if (currentlyPlaying && currentlyPlaying !== container) {
+                closeInlinePlayer(currentlyPlaying);
             }
-        });
-
-        // ESC key to close modal
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && modal.style.display === 'block') {
-                closeMixcloudModal(modal, modalContent);
+            
+            if (isCurrentlyOpen) {
+                // Close this player
+                closeInlinePlayer(container);
+                currentlyPlaying = null;
+            } else {
+                // Open this player
+                openInlinePlayer(container, url, name);
+                currentlyPlaying = container;
+                
+                // Scroll to player if needed
+                setTimeout(() => {
+                    const rect = listItem.getBoundingClientRect();
+                    if (rect.bottom > window.innerHeight) {
+                        listItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 100);
             }
-        });
+        }
+        
+        // Open inline player
+        function openInlinePlayer(container, url, name) {
+            // Build embed URL - use the full URL as feed parameter
+            const embedParams = {
+                feed: encodeURIComponent(url),
+                hide_cover: '1',
+                mini: '0', 
+                light: '0', // Dark theme player
+                hide_artwork: '0',
+                autoplay: '1'
+            };
+            
+            const paramString = Object.keys(embedParams).map(key => key + '=' + embedParams[key]).join('&');
+            const embedUrl = 'https://www.mixcloud.com/widget/iframe/?' + paramString;
+            
+            // Create iframe
+            const iframe = document.createElement('iframe');
+            iframe.src = embedUrl;
+            iframe.width = '100%';
+            iframe.height = '120';
+            iframe.frameBorder = '0';
+            iframe.allowFullscreen = true;
+            iframe.title = 'Mixcloud player for ' + name;
+            
+            // Clear container and add iframe
+            container.innerHTML = '';
+            container.appendChild(iframe);
+            
+            // Show container with animation
+            container.style.display = 'block';
+            container.style.opacity = '0';
+            setTimeout(() => {
+                container.style.transition = 'opacity 0.3s ease';
+                container.style.opacity = '1';
+            }, 10);
+        }
+        
+        // Close inline player
+        function closeInlinePlayer(container) {
+            container.style.opacity = '0';
+            setTimeout(() => {
+                container.style.display = 'none';
+                container.innerHTML = '';
+            }, 300);
+        }
     }
 
     /**
-     * Open Mixcloud player modal
-     * 
-     * @param {Element} modal Modal element
-     * @param {Element} container Player container element  
-     * @param {string} cloudcastUrl Mixcloud URL
-     * @param {string} cloudcastName Cloudcast name
+     * Initialize filter functionality
      */
-    function openMixcloudModal(modal, container, cloudcastUrl, cloudcastName) {
-        // Build embed URL
-        const embedParams = {
-            hide_cover: '1',
-            mini: '0',
-            light: '1',
-            hide_artwork: '0',
-            autoplay: '0'
-        };
+    function initFilters() {
+        const customDropdowns = document.querySelectorAll('.mixcloud-custom-dropdown');
         
-        const baseEmbedUrl = cloudcastUrl.replace('https://www.mixcloud.com/', 'https://www.mixcloud.com/widget/iframe/?feed=');
-        const paramString = Object.keys(embedParams).map(key => key + '=' + embedParams[key]).join('&');
-        const embedUrl = baseEmbedUrl + '&' + paramString;
-        
-        // Create iframe
-        const iframe = document.createElement('iframe');
-        iframe.src = embedUrl;
-        iframe.width = '100%';
-        iframe.height = '380';
-        iframe.frameBorder = '0';
-        iframe.allowFullscreen = true;
-        iframe.title = 'Mixcloud player for ' + cloudcastName;
-        
-        // Clear container and add iframe
-        container.innerHTML = '';
-        container.appendChild(iframe);
-        
-        // Show modal
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        customDropdowns.forEach(dropdown => {
+            const selected = dropdown.querySelector('.mixcloud-dropdown-selected');
+            const options = dropdown.querySelector('.mixcloud-dropdown-options');
+            const optionItems = dropdown.querySelectorAll('.mixcloud-dropdown-option');
+            const text = dropdown.querySelector('.mixcloud-dropdown-text');
+            
+            if (!selected || !options || !text) return;
+            
+            // Toggle dropdown open/close
+            function toggleDropdown() {
+                const isOpen = selected.getAttribute('aria-expanded') === 'true';
+                
+                if (isOpen) {
+                    closeDropdown();
+                } else {
+                    openDropdown();
+                }
+            }
+            
+            function openDropdown() {
+                selected.setAttribute('aria-expanded', 'true');
+                options.classList.add('mixcloud-dropdown-open');
+                
+                // Focus first option
+                const firstOption = options.querySelector('.mixcloud-dropdown-option');
+                if (firstOption) {
+                    firstOption.focus();
+                }
+                
+                // Close on outside click
+                setTimeout(() => {
+                    document.addEventListener('click', outsideClickHandler);
+                }, 0);
+            }
+            
+            function closeDropdown() {
+                selected.setAttribute('aria-expanded', 'false');
+                options.classList.remove('mixcloud-dropdown-open');
+                document.removeEventListener('click', outsideClickHandler);
+                selected.focus();
+            }
+            
+            function outsideClickHandler(e) {
+                if (!dropdown.contains(e.target)) {
+                    closeDropdown();
+                }
+            }
+            
+            function selectOption(option) {
+                const value = option.getAttribute('data-value');
+                const optionText = option.textContent;
+                
+                // Update selected display
+                text.textContent = optionText;
+                
+                // Update active state
+                optionItems.forEach(opt => {
+                    opt.classList.remove('mixcloud-dropdown-option-active');
+                    opt.setAttribute('aria-selected', 'false');
+                });
+                option.classList.add('mixcloud-dropdown-option-active');
+                option.setAttribute('aria-selected', 'true');
+                
+                // Update data attribute
+                dropdown.setAttribute('data-current-filter', value);
+                
+                // Apply filter
+                applyFilter(value);
+                
+                // Close dropdown
+                closeDropdown();
+            }
+            
+            function applyFilter(filter) {
+                const listItems = document.querySelectorAll('.mixcloud-list-item');
+                
+                listItems.forEach(item => {
+                    const title = item.querySelector('.mixcloud-list-title').textContent;
+                    const cleanTitle = title.replace(/\s*[–-]\s*\d{1,2}\/\d{1,2}\/\d{4}$/, '')
+                                           .replace(/\s*[–-]\s*\d{4}-\d{2}-\d{2}$/, '')
+                                           .trim();
+                    
+                    if (filter === 'all' || cleanTitle === filter) {
+                        item.style.display = 'grid';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                // Update pagination visibility based on filter
+                const pagination = document.querySelector('.mixcloud-pagination');
+                if (pagination) {
+                    pagination.style.display = filter === 'all' ? 'flex' : 'none';
+                }
+            }
+            
+            // Click events
+            selected.addEventListener('click', toggleDropdown);
+            
+            optionItems.forEach(option => {
+                option.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectOption(option);
+                });
+            });
+            
+            // Keyboard navigation
+            selected.addEventListener('keydown', (e) => {
+                switch (e.key) {
+                    case 'Enter':
+                    case ' ':
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        openDropdown();
+                        break;
+                    case 'Escape':
+                        closeDropdown();
+                        break;
+                }
+            });
+            
+            options.addEventListener('keydown', (e) => {
+                const focusedOption = document.activeElement;
+                const currentIndex = Array.from(optionItems).indexOf(focusedOption);
+                
+                switch (e.key) {
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        if (currentIndex < optionItems.length - 1) {
+                            optionItems[currentIndex + 1].focus();
+                        }
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        if (currentIndex > 0) {
+                            optionItems[currentIndex - 1].focus();
+                        }
+                        break;
+                    case 'Enter':
+                    case ' ':
+                        e.preventDefault();
+                        if (focusedOption && focusedOption.classList.contains('mixcloud-dropdown-option')) {
+                            selectOption(focusedOption);
+                        }
+                        break;
+                    case 'Escape':
+                        e.preventDefault();
+                        closeDropdown();
+                        break;
+                }
+            });
+            
+            // Make options focusable
+            optionItems.forEach(option => {
+                option.setAttribute('tabindex', '-1');
+            });
+        });
     }
 
-    /**
-     * Close Mixcloud player modal
-     * 
-     * @param {Element} modal Modal element
-     * @param {Element} container Player container element
-     */
-    function closeMixcloudModal(modal, container) {
-        modal.style.display = 'none';
-        document.body.style.overflow = ''; // Restore scrolling
-        
-        // Clear the iframe to stop playback
-        container.innerHTML = '';
-    }
 
     /**
      * Handle table responsiveness
@@ -446,6 +611,7 @@
                 initLazyLoadingImages();
                 handleArtworkErrors();
                 initPlayCountAnimations();
+                initFilters();
                 
                 // Show success message (optional)
                 showFilterMessage(container, data.data.message, 'success');
@@ -614,6 +780,7 @@
                 initLazyLoadingImages();
                 handleArtworkErrors();
                 initPlayCountAnimations();
+                initFilters();
                 initPagination(); // Re-init pagination for new controls
                 
                 // Scroll to top of container with smooth animation
@@ -824,8 +991,8 @@
      */
     function init() {
         initMixcloudPlayers();
+        initFilters();
         initLazyLoadingImages();
-        handleTableResponsiveness();
         initPlayCountAnimations();
         handleArtworkErrors();
         initDateFiltering();

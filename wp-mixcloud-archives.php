@@ -199,7 +199,7 @@ class WP_Mixcloud_Archives {
             wp_enqueue_style(
                 'wp-mixcloud-archives-style',
                 WP_MIXCLOUD_ARCHIVES_PLUGIN_URL . 'assets/css/style' . $min_suffix . '.css',
-                array(),
+                array('dashicons'),
                 WP_MIXCLOUD_ARCHIVES_VERSION
             );
             
@@ -583,23 +583,18 @@ class WP_Mixcloud_Archives {
         }
         
         $html = '<div class="mixcloud-archives-container" data-account="' . esc_attr($account) . '">';
-        $html .= '<h3 class="mixcloud-archives-title">' . 
-                 esc_html(sprintf(__('Mixcloud Archives for %s', 'wp-mixcloud-archives'), $account)) . 
-                 '</h3>';
         
-        // AIDEV-NOTE: Add date filter UI if enabled
-        if (!empty($options['show_date_filter'])) {
-            $html .= $this->generate_date_filter_html($options);
-        }
+        // Filter tabs
+        $html .= $this->generate_filter_tabs_html($cloudcasts_data, $options);
         
-        // AIDEV-NOTE: Grid layout for better visual display of cloudcast data
-        $html .= '<div class="mixcloud-archives-grid">';
+        // AIDEV-NOTE: List layout for Mixcloud-style interface
+        $html .= '<div class="mixcloud-archives-list">';
         
         foreach ($cloudcasts_data['data'] as $cloudcast) {
             $html .= $this->generate_cloudcast_html($cloudcast, $options);
         }
         
-        $html .= '</div>'; // .mixcloud-archives-grid
+        $html .= '</div>'; // .mixcloud-archives-list
         
         // Modal container for player popups
         $html .= '<div id="mixcloud-player-modal" class="mixcloud-modal">';
@@ -668,6 +663,70 @@ class WP_Mixcloud_Archives {
         
         $html .= '</div>'; // .mixcloud-date-filter-controls
         $html .= '</div>'; // .mixcloud-date-filter
+        
+        return $html;
+    }
+    
+    /**
+     * Generate filter dropdown HTML based on unique show titles
+     *
+     * @param array $cloudcasts_data Cloudcasts data array
+     * @param array $options         Display options
+     * @return string                Filter dropdown HTML
+     */
+    private function generate_filter_tabs_html($cloudcasts_data, $options) {
+        // Extract unique show titles (without dates)
+        $show_titles = array();
+        $show_counts = array();
+        
+        foreach ($cloudcasts_data['data'] as $cloudcast) {
+            // Remove date patterns from titles (e.g., "Show Name – 6/27/2025" becomes "Show Name")
+            $title = $cloudcast['name'];
+            $title = preg_replace('/\s*[–-]\s*\d{1,2}\/\d{1,2}\/\d{4}$/', '', $title);
+            $title = preg_replace('/\s*[–-]\s*\d{4}-\d{2}-\d{2}$/', '', $title);
+            $title = trim($title);
+            
+            if (!isset($show_counts[$title])) {
+                $show_counts[$title] = 0;
+            }
+            $show_counts[$title]++;
+        }
+        
+        // Sort show titles alphabetically for dropdown
+        ksort($show_counts);
+        
+        $total_count = count($cloudcasts_data['data']);
+        
+        // Generate custom dropdown HTML
+        $html = '<div class="mixcloud-filter-dropdown-container">';
+        
+        // Custom dropdown
+        $html .= '<div class="mixcloud-custom-dropdown" data-current-filter="all">';
+        
+        // Selected option display
+        $html .= '<div class="mixcloud-dropdown-selected" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">';
+        $html .= '<span class="mixcloud-dropdown-text">' . sprintf(__('All Shows (%d)', 'wp-mixcloud-archives'), $total_count) . '</span>';
+        $html .= '<span class="mixcloud-dropdown-arrow">▼</span>';
+        $html .= '</div>';
+        
+        // Options list
+        $html .= '<ul class="mixcloud-dropdown-options" role="listbox" aria-label="' . esc_attr__('Show filter options', 'wp-mixcloud-archives') . '">';
+        
+        // "All Shows" option (active by default)
+        $html .= '<li class="mixcloud-dropdown-option mixcloud-dropdown-option-active" data-value="all" role="option" aria-selected="true">';
+        $html .= sprintf(__('All Shows (%d)', 'wp-mixcloud-archives'), $total_count);
+        $html .= '</li>';
+        
+        // Individual show options (show all shows, even with single episodes)
+        foreach ($show_counts as $title => $count) {
+            $html .= '<li class="mixcloud-dropdown-option" data-value="' . esc_attr($title) . '" role="option" aria-selected="false">';
+            $html .= sprintf('%s (%d)', esc_html($title), $count);
+            $html .= '</li>';
+        }
+        
+        $html .= '</ul>';
+        $html .= '</div>';
+        $html .= '</div>';
         
         return $html;
     }
@@ -810,72 +869,94 @@ class WP_Mixcloud_Archives {
      * @return string          HTML output for cloudcast
      */
     private function generate_cloudcast_html($cloudcast, $options = array()) {
-        $html = '<div class="mixcloud-archive-card">';
+        $html = '<div class="mixcloud-list-item" data-cloudcast-key="' . esc_attr($cloudcast['key']) . '">';
         
-        // Artwork section - clickable to open player modal
-        $html .= '<div class="mixcloud-card-artwork" data-cloudcast-key="' . esc_attr($cloudcast['key']) . '" data-cloudcast-url="' . esc_url($cloudcast['url']) . '" data-cloudcast-name="' . esc_attr($cloudcast['name']) . '">';
-        $html .= $this->generate_artwork_html($cloudcast);
-        $html .= '<div class="mixcloud-play-overlay">';
-        $html .= '<span class="dashicons dashicons-controls-play"></span>';
+        // Thumbnail with play button
+        $html .= '<div class="mixcloud-list-thumbnail">';
+        $thumbnail_url = !empty($cloudcast['picture_urls']['large']) ? $cloudcast['picture_urls']['large'] : '';
+        if (empty($thumbnail_url) && !empty($cloudcast['picture_urls']) && is_array($cloudcast['picture_urls'])) {
+            // Try other picture sizes if large is not available
+            $thumbnail_url = !empty($cloudcast['picture_urls']['medium']) ? $cloudcast['picture_urls']['medium'] : 
+                           (!empty($cloudcast['picture_urls']['small']) ? $cloudcast['picture_urls']['small'] : '');
+        }
+        if ($thumbnail_url) {
+            $html .= '<img src="' . esc_url($thumbnail_url) . '" alt="' . esc_attr($cloudcast['name']) . '" loading="lazy">';
+        } else {
+            // Fallback placeholder for missing artwork
+            $html .= '<div class="mixcloud-list-thumbnail-fallback"><span class="dashicons dashicons-format-audio"></span></div>';
+        }
+        $html .= '<button class="mixcloud-play-button" data-cloudcast-key="' . esc_attr($cloudcast['key']) . '" data-cloudcast-url="' . esc_url($cloudcast['url']) . '" data-cloudcast-name="' . esc_attr($cloudcast['name']) . '" aria-label="' . esc_attr__('Play', 'wp-mixcloud-archives') . '">';
+        $html .= '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">';
+        $html .= '<path d="M5 3L19 12L5 21V3Z" fill="white"/>';
+        $html .= '</svg>';
+        $html .= '</button>';
         $html .= '</div>';
-        $html .= '</div>';
         
-        // Content section
-        $html .= '<div class="mixcloud-card-content">';
+        // Content area
+        $html .= '<div class="mixcloud-list-content">';
         
-        // Title
-        $html .= '<h3 class="mixcloud-card-title">';
-        $html .= '<a href="' . esc_url($cloudcast['url']) . '" target="_blank" rel="noopener" class="mixcloud-title-link">';
+        // Title and account info
+        $html .= '<div class="mixcloud-list-header">';
+        $html .= '<h3 class="mixcloud-list-title">';
         $html .= esc_html($cloudcast['name']);
-        $html .= '</a>';
         $html .= '</h3>';
         
-        // Description
-        if (!empty($cloudcast['description'])) {
-            $html .= '<div class="mixcloud-card-description">';
-            $html .= wp_kses_post(wp_trim_words($cloudcast['description'], 30));
-            $html .= '</div>';
-        }
+        // Date and time
+        $timestamp = strtotime($cloudcast['created_time']);
+        $days_ago = floor((time() - $timestamp) / (60 * 60 * 24));
+        $date_display = $days_ago == 0 ? __('Today', 'wp-mixcloud-archives') : 
+                       ($days_ago == 1 ? __('Yesterday', 'wp-mixcloud-archives') : 
+                       sprintf(_n('%d day ago', '%d days ago', $days_ago, 'wp-mixcloud-archives'), $days_ago));
         
-        // Metadata (duration and date)
-        $html .= '<div class="mixcloud-card-meta">';
+        $html .= '<div class="mixcloud-list-subtitle">';
+        $html .= sprintf('%s • %s', esc_html($options['account']), esc_html($date_display));
+        $html .= '</div>';
+        $html .= '</div>';
+        
+        // Waveform placeholder
+        $html .= '<div class="mixcloud-list-waveform">';
+        $html .= '<div class="mixcloud-waveform-placeholder"></div>';
+        $html .= '</div>';
         
         // Duration
         if ($cloudcast['audio_length'] > 0) {
-            $duration = gmdate('H:i:s', $cloudcast['audio_length']);
-            $html .= '<span class="mixcloud-meta-item mixcloud-duration">';
-            $html .= '<span class="dashicons dashicons-clock"></span>';
+            $hours = floor($cloudcast['audio_length'] / 3600);
+            $minutes = floor(($cloudcast['audio_length'] % 3600) / 60);
+            $seconds = $cloudcast['audio_length'] % 60;
+            $duration = $hours > 0 ? sprintf('%d:%02d:%02d', $hours, $minutes, $seconds) : sprintf('%d:%02d', $minutes, $seconds);
+            
+            $html .= '<div class="mixcloud-list-duration">';
             $html .= esc_html($duration);
-            $html .= '</span>';
-        }
-        
-        // Date
-        $timestamp = strtotime($cloudcast['created_time']);
-        $formatted_date = date_i18n(get_option('date_format'), $timestamp);
-        $html .= '<span class="mixcloud-meta-item mixcloud-date">';
-        $html .= '<span class="dashicons dashicons-calendar-alt"></span>';
-        $html .= esc_html($formatted_date);
-        $html .= '</span>';
-        
-        // Play count
-        if ($cloudcast['play_count'] > 0) {
-            $html .= '<span class="mixcloud-meta-item mixcloud-plays">';
-            $html .= '<span class="dashicons dashicons-visibility"></span>';
-            $html .= esc_html(number_format($cloudcast['play_count']));
-            $html .= '</span>';
-        }
-        
-        $html .= '</div>'; // .mixcloud-card-meta
-        
-        // Social sharing (if enabled)
-        if (!empty($options['show_social'])) {
-            $html .= '<div class="mixcloud-card-social">';
-            $html .= $this->generate_social_sharing_html($cloudcast);
             $html .= '</div>';
         }
         
-        $html .= '</div>'; // .mixcloud-card-content
-        $html .= '</div>'; // .mixcloud-archive-card
+        $html .= '</div>'; // .mixcloud-list-content
+        
+        // Social sharing buttons
+        $html .= '<div class="mixcloud-list-social">';
+        $encoded_url = urlencode($cloudcast['url']);
+        $encoded_title = urlencode($cloudcast['name']);
+        
+        // Facebook
+        $html .= '<a href="https://www.facebook.com/sharer/sharer.php?u=' . $encoded_url . '" target="_blank" rel="noopener" class="mixcloud-social-btn mixcloud-social-facebook" aria-label="' . esc_attr__('Share on Facebook', 'wp-mixcloud-archives') . '">';
+        $html .= '<span class="dashicons dashicons-facebook"></span>';
+        $html .= '</a>';
+        
+        // Twitter
+        $html .= '<a href="https://twitter.com/intent/tweet?url=' . $encoded_url . '&text=' . $encoded_title . '" target="_blank" rel="noopener" class="mixcloud-social-btn mixcloud-social-twitter" aria-label="' . esc_attr__('Share on Twitter', 'wp-mixcloud-archives') . '">';
+        $html .= '<span class="dashicons dashicons-twitter"></span>';
+        $html .= '</a>';
+        
+        // Bluesky
+        $html .= '<a href="https://bsky.app/intent/compose?text=' . $encoded_title . '%20' . $encoded_url . '" target="_blank" rel="noopener" class="mixcloud-social-btn mixcloud-social-bluesky" aria-label="' . esc_attr__('Share on Bluesky', 'wp-mixcloud-archives') . '">';
+        $html .= '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>';
+        $html .= '</a>';
+        $html .= '</div>';
+        
+        // Inline player container (hidden by default)
+        $html .= '<div class="mixcloud-inline-player" style="display: none;"></div>';
+        
+        $html .= '</div>'; // .mixcloud-list-item
         
         return $html;
     }
