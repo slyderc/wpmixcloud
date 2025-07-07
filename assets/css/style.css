@@ -198,7 +198,7 @@
 /* List item styles */
 .mixcloud-list-item {
     display: grid;
-    grid-template-columns: 120px 1fr auto auto;
+    grid-template-columns: 120px minmax(300px, 1fr) auto auto;
     align-items: center;
     gap: 16px;
     padding: 16px;
@@ -294,17 +294,25 @@
 
 .mixcloud-list-title {
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--mixcloud-text-primary);
     margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: 100%;
+    font-family: var(--onair-font-primary);
+    letter-spacing: -0.01em;
 }
 
 .mixcloud-list-subtitle {
     font-size: 14px;
     color: var(--mixcloud-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    font-family: var(--onair-font-primary);
 }
 
 /* Waveform placeholder */
@@ -346,8 +354,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: var(--mixcloud-bg-secondary);
     color: var(--mixcloud-text-secondary);
@@ -361,12 +369,12 @@
 }
 
 .mixcloud-social-btn .dashicons {
-    font-size: 16px;
+    font-size: 20px;
 }
 
 .mixcloud-social-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
 }
 
 /* Inline player container */
@@ -1399,18 +1407,12 @@
     min-width: 100px;
 }
 
-.mixcloud-social-sharing {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    justify-content: center;
-}
 
 .mixcloud-social-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 6px 8px;
+    padding: 8px 10px;
     border: 2px solid var(--onair-border);
     border-radius: 6px;
     background: var(--onair-bg-secondary);
@@ -1420,9 +1422,9 @@
     font-size: 12px;
     font-weight: 600;
     transition: all 0.3s ease;
-    min-width: 32px;
-    min-height: 32px;
-    gap: 3px;
+    min-width: 40px;
+    min-height: 40px;
+    gap: 6px;
     font-family: var(--onair-font-primary);
 }
 
@@ -1431,94 +1433,32 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* Platform-specific colors */
-.mixcloud-facebook-btn {
-    border-color: #4267B2;
-    color: #4267B2;
-}
-
-.mixcloud-facebook-btn:hover {
-    background: linear-gradient(135deg, #4267B2, #365a99);
-    border-color: #4267B2;
-    color: var(--onair-text-primary);
-    box-shadow: 0 4px 16px rgba(66, 103, 178, 0.4);
-}
-
-.mixcloud-twitter-btn {
-    border-color: #1DA1F2;
-    color: #1DA1F2;
-}
-
-.mixcloud-twitter-btn:hover {
-    background: linear-gradient(135deg, #1DA1F2, #1991d9);
-    border-color: #1DA1F2;
-    color: var(--onair-text-primary);
-    box-shadow: 0 4px 16px rgba(29, 161, 242, 0.4);
-}
-
-.mixcloud-bluesky-btn {
-    border-color: #00BFFF;
-    color: #00BFFF;
-}
-
-.mixcloud-bluesky-btn:hover {
-    background: linear-gradient(135deg, #00BFFF, #00a6e6);
-    border-color: #00BFFF;
-    color: var(--onair-text-primary);
-    box-shadow: 0 4px 16px rgba(0, 191, 255, 0.4);
-}
-
-.mixcloud-copy-btn {
-    border-color: var(--onair-border-light);
-    color: var(--onair-text-muted);
-}
-
-.mixcloud-copy-btn:hover {
-    background: linear-gradient(135deg, var(--onair-border-light), #505050);
-    border-color: var(--onair-border-light);
-    color: var(--onair-text-primary);
-}
-
-.mixcloud-copy-btn.copied {
-    background: linear-gradient(135deg, var(--onair-success), #218838);
-    border-color: var(--onair-success);
-    color: var(--onair-text-primary);
-    box-shadow: 0 4px 16px rgba(40, 167, 69, 0.4);
-}
 
 /* Social button icons */
 .mixcloud-social-btn .dashicons {
-    font-size: 14px;
-    width: 14px;
-    height: 14px;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.mixcloud-social-btn svg {
+    width: 20px;
+    height: 20px;
 }
 
 .mixcloud-bluesky-icon {
-    font-size: 14px;
+    font-size: 20px;
     line-height: 1;
 }
 
-/* Social button labels */
-.mixcloud-social-label {
-    font-size: 10px;
-    font-weight: 500;
-    white-space: nowrap;
-}
+
 
 /* Responsive social buttons */
 @media screen and (max-width: 768px) {
-    .mixcloud-social-sharing {
-        gap: 3px;
-    }
-    
     .mixcloud-social-btn {
         min-width: 24px;
         min-height: 24px;
         padding: 2px 4px;
-    }
-    
-    .mixcloud-social-label {
-        display: none;
     }
     
     .mixcloud-social-btn .dashicons {
@@ -1554,7 +1494,7 @@
 /* Responsive styles for list layout */
 @media screen and (max-width: 768px) {
     .mixcloud-list-item {
-        grid-template-columns: 100px 1fr;
+        grid-template-columns: 100px minmax(250px, 1fr);
         gap: 12px;
         padding: 12px;
     }
@@ -1581,7 +1521,7 @@
 
 @media screen and (max-width: 480px) {
     .mixcloud-list-item {
-        grid-template-columns: 80px 1fr;
+        grid-template-columns: 80px minmax(200px, 1fr);
         gap: 8px;
         padding: 8px;
     }

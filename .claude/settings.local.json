@@ -38,7 +38,10 @@
       "mcp__puppeteer-mcp-server__puppeteer_connect_active_tab",
       "Bash(pkill:*)",
       "Bash(npx wp-env:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(open:*)",
+      "Bash(grep:*)",
+      "mcp__puppeteer-mcp-server__puppeteer_hover"
     ],
     "deny": []
   }
