@@ -1,0 +1,231 @@
+/**
+ * WP Mixcloud Archives Admin Styles
+ * 
+ * Admin interface styling for the plugin settings page.
+ */
+
+/* AIDEV-NOTE: Admin settings page layout improvements */
+.wp-mixcloud-archives-admin .form-table {
+    margin-top: 20px;
+}
+
+.wp-mixcloud-archives-admin .form-table th {
+    width: 200px;
+    padding: 15px 10px 15px 0;
+    vertical-align: top;
+}
+
+.wp-mixcloud-archives-admin .form-table td {
+    padding: 15px 10px;
+    vertical-align: top;
+}
+
+/* AIDEV-NOTE: Section headers styling */
+.wp-mixcloud-archives-admin h2 {
+    margin-top: 30px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+}
+
+.wp-mixcloud-archives-admin h2:first-of-type {
+    margin-top: 0;
+}
+
+/* AIDEV-NOTE: API status styling */
+.wp-mixcloud-api-status {
+    margin: 15px 0;
+    padding: 12px;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.wp-mixcloud-api-status.success {
+    background-color: #f0f8f0;
+    border-left-color: #46b450;
+    color: #2e7d32;
+}
+
+.wp-mixcloud-api-status.error {
+    background-color: #fef7f7;
+    border-left-color: #dc3232;
+    color: #c62d2d;
+}
+
+.wp-mixcloud-api-status.warning {
+    background-color: #fff8e5;
+    border-left-color: #ffb900;
+    color: #996600;
+}
+
+/* AIDEV-NOTE: Cache management section styling */
+.wp-mixcloud-cache-section {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.wp-mixcloud-cache-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+#wp-mixcloud-clear-cache {
+    position: relative;
+}
+
+#wp-mixcloud-clear-cache.loading {
+    color: transparent;
+}
+
+#wp-mixcloud-clear-cache.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid #555;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: wp-mixcloud-spin 1s linear infinite;
+}
+
+@keyframes wp-mixcloud-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+#wp-mixcloud-clear-cache-status.success {
+    color: #46b450;
+    font-weight: 600;
+}
+
+#wp-mixcloud-clear-cache-status.error {
+    color: #dc3232;
+    font-weight: 600;
+}
+
+/* AIDEV-NOTE: Settings field improvements */
+.wp-mixcloud-archives-admin select {
+    min-width: 150px;
+}
+
+.wp-mixcloud-archives-admin input[type="text"],
+.wp-mixcloud-archives-admin input[type="number"] {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.wp-mixcloud-archives-admin input[type="text"]:focus,
+.wp-mixcloud-archives-admin input[type="number"]:focus,
+.wp-mixcloud-archives-admin select:focus {
+    border-color: #005cee;
+    box-shadow: 0 0 0 1px #005cee;
+    outline: none;
+}
+
+/* AIDEV-NOTE: Description text styling */
+.wp-mixcloud-archives-admin .description {
+    color: #666;
+    font-style: italic;
+    margin-top: 5px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+/* AIDEV-NOTE: Usage instructions card styling */
+.wp-mixcloud-usage-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    margin-top: 30px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.wp-mixcloud-usage-card h2 {
+    margin-top: 0;
+    border-bottom: 2px solid #005cee;
+    color: #333;
+}
+
+.wp-mixcloud-usage-card h3 {
+    color: #555;
+    margin-top: 25px;
+    margin-bottom: 10px;
+}
+
+.wp-mixcloud-usage-card h4 {
+    color: #666;
+    margin-top: 20px;
+    margin-bottom: 8px;
+}
+
+.wp-mixcloud-usage-card code {
+    background: #f1f1f1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+    color: #d63384;
+    border: 1px solid #e0e0e0;
+}
+
+.wp-mixcloud-usage-card ul {
+    margin-left: 20px;
+    margin-bottom: 15px;
+}
+
+.wp-mixcloud-usage-card li {
+    margin-bottom: 5px;
+    line-height: 1.5;
+}
+
+.wp-mixcloud-examples {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.wp-mixcloud-examples p {
+    margin-bottom: 10px;
+}
+
+.wp-mixcloud-examples strong {
+    color: #333;
+}
+
+/* AIDEV-NOTE: Responsive design for admin interface */
+@media (max-width: 782px) {
+    .wp-mixcloud-archives-admin .form-table th,
+    .wp-mixcloud-archives-admin .form-table td {
+        display: block;
+        width: 100%;
+        padding: 10px 0;
+    }
+    
+    .wp-mixcloud-archives-admin .form-table th {
+        border-bottom: none;
+        padding-bottom: 5px;
+    }
+    
+    .wp-mixcloud-cache-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .wp-mixcloud-usage-card {
+        padding: 15px;
+    }
+}

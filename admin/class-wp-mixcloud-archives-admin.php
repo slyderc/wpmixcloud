@@ -54,6 +54,9 @@ class WP_Mixcloud_Archives_Admin {
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'init_settings'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
+        
+        // AIDEV-NOTE: Add AJAX handler for cache clearing
+        add_action('wp_ajax_wp_mixcloud_clear_cache', array($this, 'ajax_clear_cache'));
     }
     
     /**
@@ -114,7 +117,31 @@ class WP_Mixcloud_Archives_Admin {
             self::MENU_SLUG
         );
         
-        // AIDEV-TODO: Add cache management field after implementation
+        // Add cache management section
+        add_settings_section(
+            'wp_mixcloud_archives_cache_section',
+            __('Cache Management', 'wp-mixcloud-archives'),
+            array($this, 'render_cache_section_description'),
+            self::MENU_SLUG
+        );
+        
+        // Add cache expiration field
+        add_settings_field(
+            'cache_expiration',
+            __('Cache Expiration', 'wp-mixcloud-archives'),
+            array($this, 'render_cache_expiration_field'),
+            self::MENU_SLUG,
+            'wp_mixcloud_archives_cache_section'
+        );
+        
+        // Add clear cache field (display only, not saved)
+        add_settings_field(
+            'clear_cache',
+            __('Clear Cache', 'wp-mixcloud-archives'),
+            array($this, 'render_clear_cache_field'),
+            self::MENU_SLUG,
+            'wp_mixcloud_archives_cache_section'
+        );
     }
     
     /**
@@ -158,6 +185,21 @@ class WP_Mixcloud_Archives_Admin {
             }
         }
         
+        // Sanitize cache expiration
+        if (isset($input['cache_expiration'])) {
+            $expiration = absint($input['cache_expiration']);
+            if ($expiration >= 300 && $expiration <= 86400) { // 5 minutes to 24 hours
+                $sanitized['cache_expiration'] = $expiration;
+            } else {
+                add_settings_error(
+                    'wp_mixcloud_archives_options',
+                    'invalid_cache_expiration',
+                    __('Cache expiration must be between 300 and 86400 seconds (5 minutes to 24 hours).', 'wp-mixcloud-archives')
+                );
+                $sanitized['cache_expiration'] = 3600; // Default 1 hour
+            }
+        }
+        
         return $sanitized;
     }
     
@@ -196,6 +238,51 @@ class WP_Mixcloud_Archives_Admin {
         
         echo '<input type="number" id="default_days" name="wp_mixcloud_archives_options[default_days]" value="' . esc_attr($days) . '" min="1" max="365" class="small-text" />';
         echo '<p class="description">' . esc_html__('Default number of days to show in archives (1-365).', 'wp-mixcloud-archives') . '</p>';
+    }
+    
+    /**
+     * Render cache section description
+     */
+    public function render_cache_section_description() {
+        echo '<p>' . esc_html__('Manage plugin caching settings to optimize performance.', 'wp-mixcloud-archives') . '</p>';
+    }
+    
+    /**
+     * Render cache expiration field
+     */
+    public function render_cache_expiration_field() {
+        $options = get_option('wp_mixcloud_archives_options', array());
+        $expiration = isset($options['cache_expiration']) ? $options['cache_expiration'] : 3600;
+        
+        echo '<select id="cache_expiration" name="wp_mixcloud_archives_options[cache_expiration]">';
+        
+        $expiration_options = array(
+            300   => __('5 minutes', 'wp-mixcloud-archives'),
+            900   => __('15 minutes', 'wp-mixcloud-archives'),
+            1800  => __('30 minutes', 'wp-mixcloud-archives'),
+            3600  => __('1 hour', 'wp-mixcloud-archives'),
+            7200  => __('2 hours', 'wp-mixcloud-archives'),
+            14400 => __('4 hours', 'wp-mixcloud-archives'),
+            43200 => __('12 hours', 'wp-mixcloud-archives'),
+            86400 => __('24 hours', 'wp-mixcloud-archives'),
+        );
+        
+        foreach ($expiration_options as $value => $label) {
+            $selected = selected($expiration, $value, false);
+            echo '<option value="' . esc_attr($value) . '"' . $selected . '>' . esc_html($label) . '</option>';
+        }
+        
+        echo '</select>';
+        echo '<p class="description">' . esc_html__('How long to cache Mixcloud API responses. Longer cache times improve performance but may delay showing new content.', 'wp-mixcloud-archives') . '</p>';
+    }
+    
+    /**
+     * Render clear cache field
+     */
+    public function render_clear_cache_field() {
+        echo '<button type="button" id="wp-mixcloud-clear-cache" class="button button-secondary">' . esc_html__('Clear All Cache', 'wp-mixcloud-archives') . '</button>';
+        echo '<span id="wp-mixcloud-clear-cache-status" style="margin-left: 10px;"></span>';
+        echo '<p class="description">' . esc_html__('Clear all cached Mixcloud data. Use this if you\'re not seeing recent updates or experiencing display issues.', 'wp-mixcloud-archives') . '</p>';
     }
     
     /**
@@ -258,7 +345,7 @@ class WP_Mixcloud_Archives_Admin {
             header('X-XSS-Protection: 1; mode=block');
         }
         ?>
-        <div class="wrap">
+        <div class="wrap wp-mixcloud-archives-admin">
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
             
             <?php settings_errors(); ?>
@@ -340,8 +427,7 @@ class WP_Mixcloud_Archives_Admin {
             return;
         }
         
-        // AIDEV-TODO: Enqueue admin CSS and JS files after creation
-        /*
+        // AIDEV-NOTE: Enqueue admin CSS for styling
         wp_enqueue_style(
             'wp-mixcloud-archives-admin',
             WP_MIXCLOUD_ARCHIVES_PLUGIN_URL . 'admin/css/admin.css',
@@ -349,6 +435,7 @@ class WP_Mixcloud_Archives_Admin {
             WP_MIXCLOUD_ARCHIVES_VERSION
         );
         
+        // AIDEV-NOTE: Enqueue admin JavaScript for functionality
         wp_enqueue_script(
             'wp-mixcloud-archives-admin',
             WP_MIXCLOUD_ARCHIVES_PLUGIN_URL . 'admin/js/admin.js',
@@ -356,7 +443,74 @@ class WP_Mixcloud_Archives_Admin {
             WP_MIXCLOUD_ARCHIVES_VERSION,
             true
         );
-        */
+        
+        // AIDEV-NOTE: Localize script with AJAX data for clear cache functionality
+        wp_localize_script(
+            'wp-mixcloud-archives-admin',
+            'wpMixcloudAdmin',
+            array(
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'clearCacheNonce' => wp_create_nonce('wp_mixcloud_clear_cache'),
+            )
+        );
+    }
+    
+    /**
+     * AJAX handler for clearing cache
+     */
+    public function ajax_clear_cache() {
+        // AIDEV-NOTE: Verify nonce for security
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'wp_mixcloud_clear_cache')) {
+            wp_send_json_error(array(
+                'message' => __('Security check failed.', 'wp-mixcloud-archives')
+            ));
+        }
+        
+        // AIDEV-NOTE: Check user capabilities
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array(
+                'message' => __('You do not have permission to perform this action.', 'wp-mixcloud-archives')
+            ));
+        }
+        
+        // AIDEV-NOTE: Clear cache using simplified method
+        $result = $this->clear_plugin_cache();
+        
+        if ($result) {
+            wp_send_json_success(array(
+                'message' => __('Cache cleared successfully!', 'wp-mixcloud-archives')
+            ));
+        } else {
+            wp_send_json_error(array(
+                'message' => __('Failed to clear cache. Please try again.', 'wp-mixcloud-archives')
+            ));
+        }
+    }
+    
+    /**
+     * Clear all plugin-related cache
+     *
+     * @return bool Success status
+     */
+    private function clear_plugin_cache() {
+        global $wpdb;
+        
+        try {
+            // AIDEV-NOTE: Clear all plugin-related transients
+            $wpdb->query(
+                "DELETE FROM {$wpdb->options} 
+                 WHERE option_name LIKE '_transient_mixcloud%' 
+                 OR option_name LIKE '_transient_timeout_mixcloud%'"
+            );
+            
+            return true;
+        } catch (Exception $e) {
+            // AIDEV-NOTE: Log error for debugging
+            if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+                error_log('WP Mixcloud Archives: Failed to clear cache - ' . $e->getMessage());
+            }
+            return false;
+        }
     }
     
     /**
@@ -366,8 +520,9 @@ class WP_Mixcloud_Archives_Admin {
      */
     public function get_options() {
         $defaults = array(
-            'mixcloud_account' => '',
-            'default_days'     => 30,
+            'mixcloud_account'  => '',
+            'default_days'      => 30,
+            'cache_expiration'  => 3600,
         );
         
         return wp_parse_args(get_option('wp_mixcloud_archives_options', array()), $defaults);

@@ -111,7 +111,8 @@ class WP_Mixcloud_Archives {
         // AIDEV-NOTE: Register cache warming action
         add_action('mixcloud_warm_cache_single', array($this, 'warm_single_account_cache'));
         
-        // AIDEV-TODO: Add hooks for admin settings page after implementation
+        // AIDEV-NOTE: Hook into admin settings save to clear cache when settings change
+        add_action('updated_option', array($this, 'on_settings_updated'), 10, 3);
         
         register_activation_hook(__FILE__, array($this, 'activate'));
         register_deactivation_hook(__FILE__, array($this, 'deactivate'));
@@ -235,43 +236,118 @@ class WP_Mixcloud_Archives {
      * Enqueue admin scripts and styles
      */
     public function enqueue_admin_scripts($hook) {
-        // AIDEV-TODO: Enqueue admin-specific CSS and JS files after creation
-        /*
-        if ('settings_page_wp-mixcloud-archives' !== $hook) {
-            return;
-        }
-        
-        wp_enqueue_style(
-            'wp-mixcloud-archives-admin-style',
-            WP_MIXCLOUD_ARCHIVES_PLUGIN_URL . 'assets/css/admin.css',
-            array(),
-            WP_MIXCLOUD_ARCHIVES_VERSION
-        );
-        
-        wp_enqueue_script(
-            'wp-mixcloud-archives-admin-script',
-            WP_MIXCLOUD_ARCHIVES_PLUGIN_URL . 'assets/js/admin.js',
-            array('jquery'),
-            WP_MIXCLOUD_ARCHIVES_VERSION,
-            true
-        );
-        */
+        // AIDEV-NOTE: Admin assets are now handled by the admin class
+        // See admin/class-wp-mixcloud-archives-admin.php for implementation
     }
     
     /**
      * Plugin activation hook
      */
     public function activate() {
-        // AIDEV-TODO: Add activation logic (database setup, default options, etc.)
+        // AIDEV-NOTE: Set up default plugin options on activation
+        $this->setup_default_options();
+        
+        // AIDEV-NOTE: Set plugin activation timestamp for tracking
+        update_option('wp_mixcloud_archives_activated', time());
+        
+        // AIDEV-NOTE: Set plugin version for upgrade tracking
+        update_option('wp_mixcloud_archives_version', WP_MIXCLOUD_ARCHIVES_VERSION);
+        
         flush_rewrite_rules();
+    }
+    
+    /**
+     * Set up default plugin options on activation
+     */
+    private function setup_default_options() {
+        $default_options = array(
+            'default_account' => 'NowWaveRadio',
+            'default_limit' => 20,
+            'default_per_page' => 10,
+            'cache_expiration' => 3600, // 1 hour
+            'enable_lazy_loading' => true,
+            'enable_mini_player' => true,
+            'enable_date_filter' => true,
+            'enable_pagination' => true,
+            'enable_social_sharing' => true,
+            'api_timeout' => 15,
+            'api_connection_timeout' => 5,
+            'rate_limit_requests' => 30,
+            'rate_limit_window' => 300, // 5 minutes
+            'debug_mode' => false,
+        );
+        
+        $current_options = get_option('wp_mixcloud_archives_options', array());
+        
+        // AIDEV-NOTE: Merge with existing options to preserve user settings
+        $merged_options = array_merge($default_options, $current_options);
+        
+        update_option('wp_mixcloud_archives_options', $merged_options);
+    }
+    
+    /**
+     * Handle settings updates to clear cache when needed
+     *
+     * @param string $option     Option name
+     * @param mixed  $old_value  Old option value
+     * @param mixed  $new_value  New option value
+     */
+    public function on_settings_updated($option, $old_value, $new_value) {
+        // AIDEV-NOTE: Clear cache when plugin settings are updated
+        if ($option === 'wp_mixcloud_archives_options') {
+            // Check if account or cache settings changed
+            $old_account = isset($old_value['mixcloud_account']) ? $old_value['mixcloud_account'] : '';
+            $new_account = isset($new_value['mixcloud_account']) ? $new_value['mixcloud_account'] : '';
+            
+            $old_cache_expiration = isset($old_value['cache_expiration']) ? $old_value['cache_expiration'] : 3600;
+            $new_cache_expiration = isset($new_value['cache_expiration']) ? $new_value['cache_expiration'] : 3600;
+            
+            // Clear cache if account or cache expiration changed
+            if ($old_account !== $new_account || $old_cache_expiration !== $new_cache_expiration) {
+                $this->clear_all_caches();
+                
+                // AIDEV-NOTE: Log cache clearing for debugging
+                if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+                    error_log('WP Mixcloud Archives: Cache cleared due to settings update');
+                }
+            }
+        }
     }
     
     /**
      * Plugin deactivation hook
      */
     public function deactivate() {
-        // AIDEV-TODO: Add deactivation logic (cleanup, etc.)
+        // AIDEV-NOTE: Clear scheduled events to prevent orphaned cron jobs
+        wp_clear_scheduled_hook('wp_mixcloud_archives_cleanup_cache');
+        wp_clear_scheduled_hook('wp_mixcloud_archives_warm_cache');
+        
+        // AIDEV-NOTE: Clear rate limiting transients to reset limits
+        $this->clear_rate_limit_data();
+        
+        // AIDEV-NOTE: Log deactivation for debugging purposes
+        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+            error_log('WP Mixcloud Archives deactivated at ' . current_time('mysql'));
+        }
+        
+        // AIDEV-NOTE: Set deactivation timestamp but preserve settings for reactivation
+        update_option('wp_mixcloud_archives_deactivated', time());
+        
         flush_rewrite_rules();
+    }
+    
+    /**
+     * Clear rate limiting data on deactivation
+     */
+    private function clear_rate_limit_data() {
+        global $wpdb;
+        
+        // AIDEV-NOTE: Remove all rate limiting transients
+        $wpdb->query(
+            "DELETE FROM {$wpdb->options} 
+             WHERE option_name LIKE '_transient_mixcloud_ajax_limit_%' 
+             OR option_name LIKE '_transient_timeout_mixcloud_ajax_limit_%'"
+        );
     }
     
     /**
@@ -324,21 +400,24 @@ class WP_Mixcloud_Archives {
         $limit = max(1, min($limit, 100)); // Between 1 and 100 results for API
         $per_page = max(1, min($per_page, 50)); // Between 1 and 50 results per page
         
-        // Get cloudcasts from API with enhanced caching
+        // Get cloudcasts from API with simple caching
         $cache_args = array(
             'limit'    => $limit,
             'metadata' => true,
         );
         
-        // Try multi-tier cache first
-        $cloudcasts_data = $this->get_cached_cloudcasts($account, $cache_args);
+        // AIDEV-NOTE: Simple transient caching for API responses
+        $cache_key = 'mixcloud_cloudcasts_' . md5($account . serialize($cache_args));
+        $cloudcasts_data = get_transient($cache_key);
         
         if (false === $cloudcasts_data) {
             $cloudcasts_data = $this->get_api_handler()->get_user_cloudcasts($account, $cache_args);
             
-            // Store in multi-tier cache if successful
+            // Store in transient cache if successful
             if (!is_wp_error($cloudcasts_data)) {
-                $this->set_cached_cloudcasts($account, $cache_args, $cloudcasts_data);
+                $options = get_option('wp_mixcloud_archives_options', array());
+                $cache_expiration = isset($options['cache_expiration']) ? $options['cache_expiration'] : 3600;
+                set_transient($cache_key, $cloudcasts_data, $cache_expiration);
             }
         }
         
@@ -349,11 +428,8 @@ class WP_Mixcloud_Archives {
             $severe_errors = array('api_error_500', 'api_error_502', 'api_error_503', 'api_request_failed');
             
             if (in_array($error_code, $severe_errors, true)) {
-                // Try to show fallback content with cached data
-                $fallback_data = $this->get_cached_fallback_data($account);
-                if (!empty($fallback_data)) {
-                    return $this->generate_fallback_content($account, $options);
-                }
+                // AIDEV-NOTE: Simplified fallback - just show generic error for now
+                // Complex fallback system removed for simplicity
             }
             
             // Show user-friendly error message
@@ -516,28 +592,22 @@ class WP_Mixcloud_Archives {
             $html .= $this->generate_date_filter_html($options);
         }
         
-        // AIDEV-NOTE: Table layout for better structured display of cloudcast data
-        $html .= '<table class="mixcloud-archives-table">';
-        $html .= '<thead>';
-        $html .= '<tr>';
-        $html .= '<th class="mixcloud-artwork-column">' . esc_html__('Artwork', 'wp-mixcloud-archives') . '</th>';
-        $html .= '<th class="mixcloud-title-column">' . esc_html__('Show Title', 'wp-mixcloud-archives') . '</th>';
-        $html .= '<th class="mixcloud-player-column">' . esc_html__('Player', 'wp-mixcloud-archives') . '</th>';
-        $html .= '<th class="mixcloud-notes-column">' . esc_html__('Show Notes', 'wp-mixcloud-archives') . '</th>';
-        $html .= '<th class="mixcloud-date-column">' . esc_html__('Date Posted', 'wp-mixcloud-archives') . '</th>';
-        if (!empty($options['show_social'])) {
-            $html .= '<th class="mixcloud-social-column">' . esc_html__('Share', 'wp-mixcloud-archives') . '</th>';
-        }
-        $html .= '</tr>';
-        $html .= '</thead>';
-        $html .= '<tbody>';
+        // AIDEV-NOTE: Grid layout for better visual display of cloudcast data
+        $html .= '<div class="mixcloud-archives-grid">';
         
         foreach ($cloudcasts_data['data'] as $cloudcast) {
             $html .= $this->generate_cloudcast_html($cloudcast, $options);
         }
         
-        $html .= '</tbody>';
-        $html .= '</table>'; // .mixcloud-archives-table
+        $html .= '</div>'; // .mixcloud-archives-grid
+        
+        // Modal container for player popups
+        $html .= '<div id="mixcloud-player-modal" class="mixcloud-modal">';
+        $html .= '<div class="mixcloud-modal-content">';
+        $html .= '<span class="mixcloud-modal-close">&times;</span>';
+        $html .= '<div class="mixcloud-modal-player-container"></div>';
+        $html .= '</div>';
+        $html .= '</div>'; // .mixcloud-modal
         
         // AIDEV-NOTE: Add pagination controls if enabled
         if (!empty($options['show_pagination']) && !empty($options['pagination'])) {
@@ -740,43 +810,72 @@ class WP_Mixcloud_Archives {
      * @return string          HTML output for cloudcast
      */
     private function generate_cloudcast_html($cloudcast, $options = array()) {
-        $html = '<tr class="mixcloud-archive-item">';
+        $html = '<div class="mixcloud-archive-card">';
         
-        // Artwork column
-        $html .= '<td class="mixcloud-artwork-cell">';
+        // Artwork section - clickable to open player modal
+        $html .= '<div class="mixcloud-card-artwork" data-cloudcast-key="' . esc_attr($cloudcast['key']) . '" data-cloudcast-url="' . esc_url($cloudcast['url']) . '" data-cloudcast-name="' . esc_attr($cloudcast['name']) . '">';
         $html .= $this->generate_artwork_html($cloudcast);
-        $html .= '</td>';
+        $html .= '<div class="mixcloud-play-overlay">';
+        $html .= '<span class="dashicons dashicons-controls-play"></span>';
+        $html .= '</div>';
+        $html .= '</div>';
         
-        // Show Title column (clickable)
-        $html .= '<td class="mixcloud-title-cell">';
+        // Content section
+        $html .= '<div class="mixcloud-card-content">';
+        
+        // Title
+        $html .= '<h3 class="mixcloud-card-title">';
         $html .= '<a href="' . esc_url($cloudcast['url']) . '" target="_blank" rel="noopener" class="mixcloud-title-link">';
         $html .= esc_html($cloudcast['name']);
         $html .= '</a>';
-        $html .= '</td>';
+        $html .= '</h3>';
         
-        // Player column
-        $html .= '<td class="mixcloud-player-cell">';
-        $html .= $this->generate_player_html($cloudcast, $options);
-        $html .= '</td>';
-        
-        // Show Notes column
-        $html .= '<td class="mixcloud-notes-cell">';
-        $html .= $this->generate_show_notes_html($cloudcast);
-        $html .= '</td>';
-        
-        // Date Posted column
-        $html .= '<td class="mixcloud-date-cell">';
-        $html .= $this->generate_date_html($cloudcast);
-        $html .= '</td>';
-        
-        // Social Sharing column (if enabled)
-        if (!empty($options['show_social'])) {
-            $html .= '<td class="mixcloud-social-cell">';
-            $html .= $this->generate_social_sharing_html($cloudcast);
-            $html .= '</td>';
+        // Description
+        if (!empty($cloudcast['description'])) {
+            $html .= '<div class="mixcloud-card-description">';
+            $html .= wp_kses_post(wp_trim_words($cloudcast['description'], 30));
+            $html .= '</div>';
         }
         
-        $html .= '</tr>'; // .mixcloud-archive-item
+        // Metadata (duration and date)
+        $html .= '<div class="mixcloud-card-meta">';
+        
+        // Duration
+        if ($cloudcast['audio_length'] > 0) {
+            $duration = gmdate('H:i:s', $cloudcast['audio_length']);
+            $html .= '<span class="mixcloud-meta-item mixcloud-duration">';
+            $html .= '<span class="dashicons dashicons-clock"></span>';
+            $html .= esc_html($duration);
+            $html .= '</span>';
+        }
+        
+        // Date
+        $timestamp = strtotime($cloudcast['created_time']);
+        $formatted_date = date_i18n(get_option('date_format'), $timestamp);
+        $html .= '<span class="mixcloud-meta-item mixcloud-date">';
+        $html .= '<span class="dashicons dashicons-calendar-alt"></span>';
+        $html .= esc_html($formatted_date);
+        $html .= '</span>';
+        
+        // Play count
+        if ($cloudcast['play_count'] > 0) {
+            $html .= '<span class="mixcloud-meta-item mixcloud-plays">';
+            $html .= '<span class="dashicons dashicons-visibility"></span>';
+            $html .= esc_html(number_format($cloudcast['play_count']));
+            $html .= '</span>';
+        }
+        
+        $html .= '</div>'; // .mixcloud-card-meta
+        
+        // Social sharing (if enabled)
+        if (!empty($options['show_social'])) {
+            $html .= '<div class="mixcloud-card-social">';
+            $html .= $this->generate_social_sharing_html($cloudcast);
+            $html .= '</div>';
+        }
+        
+        $html .= '</div>'; // .mixcloud-card-content
+        $html .= '</div>'; // .mixcloud-archive-card
         
         return $html;
     }
@@ -841,21 +940,23 @@ class WP_Mixcloud_Archives {
      */
     private function generate_artwork_html($cloudcast) {
         if (empty($cloudcast['picture_urls']) || !is_array($cloudcast['picture_urls'])) {
-            return '<div class="mixcloud-no-artwork">' . esc_html__('No artwork', 'wp-mixcloud-archives') . '</div>';
+            return '<div class="mixcloud-no-artwork-large"><span class="dashicons dashicons-format-audio"></span><span>' . esc_html__('No artwork', 'wp-mixcloud-archives') . '</span></div>';
         }
         
-        // AIDEV-NOTE: Use medium size artwork for table display to balance quality and loading speed
+        // AIDEV-NOTE: Use large size artwork for card display for better visual impact
         $artwork_url = '';
-        if (isset($cloudcast['picture_urls']['medium'])) {
-            $artwork_url = $cloudcast['picture_urls']['medium'];
-        } elseif (isset($cloudcast['picture_urls']['large'])) {
+        if (isset($cloudcast['picture_urls']['large'])) {
             $artwork_url = $cloudcast['picture_urls']['large'];
+        } elseif (isset($cloudcast['picture_urls']['extra_large'])) {
+            $artwork_url = $cloudcast['picture_urls']['extra_large'];
+        } elseif (isset($cloudcast['picture_urls']['medium'])) {
+            $artwork_url = $cloudcast['picture_urls']['medium'];
         } elseif (isset($cloudcast['picture_urls']['small'])) {
             $artwork_url = $cloudcast['picture_urls']['small'];
         }
         
         if (empty($artwork_url)) {
-            return '<div class="mixcloud-no-artwork">' . esc_html__('No artwork', 'wp-mixcloud-archives') . '</div>';
+            return '<div class="mixcloud-no-artwork-large"><span class="dashicons dashicons-format-audio"></span><span>' . esc_html__('No artwork', 'wp-mixcloud-archives') . '</span></div>';
         }
         
         return sprintf(
@@ -1864,32 +1965,34 @@ class WP_Mixcloud_Archives {
      * @return bool Success status
      */
     public function clear_all_caches($account = '') {
-        // Clear object cache
-        wp_cache_flush_group('mixcloud_archives');
+        global $wpdb;
         
-        // Clear transients
-        if (!empty($account)) {
-            // Clear specific account cache
-            global $wpdb;
-            $like_pattern = '%mixcloud%' . strtolower(trim($account)) . '%';
-            $wpdb->query(
-                $wpdb->prepare(
-                    "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s AND option_name LIKE '_transient_%'",
-                    $like_pattern
-                )
-            );
-        } else {
-            // Clear all plugin transients
-            global $wpdb;
-            $wpdb->query(
-                "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_mixcloud%' OR option_name LIKE '_transient_timeout_mixcloud%'"
-            );
+        try {
+            // AIDEV-NOTE: Clear transients only (simplified caching approach)
+            if (!empty($account)) {
+                // Clear specific account cache
+                $like_pattern = '%mixcloud_cloudcasts%' . strtolower(trim($account)) . '%';
+                $wpdb->query(
+                    $wpdb->prepare(
+                        "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s AND option_name LIKE '_transient_%'",
+                        $like_pattern
+                    )
+                );
+            } else {
+                // Clear all plugin transients
+                $wpdb->query(
+                    "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_mixcloud%' OR option_name LIKE '_transient_timeout_mixcloud%'"
+                );
+            }
+            
+            return true;
+        } catch (Exception $e) {
+            // AIDEV-NOTE: Log error for debugging
+            if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+                error_log('WP Mixcloud Archives: Failed to clear cache - ' . $e->getMessage());
+            }
+            return false;
         }
-        
-        // Clear cache stats
-        delete_transient('mixcloud_cache_stats');
-        
-        return true;
     }
     
     /**

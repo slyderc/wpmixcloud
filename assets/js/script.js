@@ -8,104 +8,102 @@
     'use strict';
 
     /**
-     * Initialize Mixcloud player functionality
+     * Initialize Mixcloud modal player functionality
      */
     function initMixcloudPlayers() {
-        const playerWrappers = document.querySelectorAll('.mixcloud-player-wrapper');
+        const artworkElements = document.querySelectorAll('.mixcloud-card-artwork');
+        const modal = document.getElementById('mixcloud-player-modal');
+        const modalContent = document.querySelector('.mixcloud-modal-player-container');
+        const closeBtn = document.querySelector('.mixcloud-modal-close');
         
-        if (playerWrappers.length === 0) {
+        if (!modal || !modalContent || !closeBtn) {
             return;
         }
 
-        // AIDEV-NOTE: Use Intersection Observer for true lazy loading with optimized settings
-        if ('IntersectionObserver' in window) {
-            const playerObserver = new IntersectionObserver(function(entries, observer) {
-                entries.forEach(function(entry) {
-                    if (entry.isIntersecting) {
-                        const wrapper = entry.target;
-                        initPlayerLoadButton(wrapper);
-                        observer.unobserve(wrapper);
-                    }
-                });
-            }, {
-                rootMargin: '50px', // Reduced margin for better performance
-                threshold: 0.1 // Start loading when 10% visible
+        // Add click handlers to artwork elements
+        artworkElements.forEach(function(artwork) {
+            artwork.addEventListener('click', function() {
+                const cloudcastKey = artwork.getAttribute('data-cloudcast-key');
+                const cloudcastUrl = artwork.getAttribute('data-cloudcast-url');
+                const cloudcastName = artwork.getAttribute('data-cloudcast-name');
+                
+                if (cloudcastUrl) {
+                    openMixcloudModal(modal, modalContent, cloudcastUrl, cloudcastName);
+                }
             });
-
-            playerWrappers.forEach(function(wrapper) {
-                playerObserver.observe(wrapper);
-            });
-        } else {
-            // Fallback for older browsers
-            playerWrappers.forEach(function(wrapper) {
-                initPlayerLoadButton(wrapper);
-            });
-        }
-    }
-
-    /**
-     * Initialize load button for a player wrapper
-     * 
-     * @param {Element} wrapper Player wrapper element
-     */
-    function initPlayerLoadButton(wrapper) {
-        const loadBtn = wrapper.querySelector('.mixcloud-player-load-btn');
-        const iframe = wrapper.querySelector('.mixcloud-player-lazy');
-        
-        if (!loadBtn || !iframe) {
-            return;
-        }
-
-        // Handle button click
-        loadBtn.addEventListener('click', function() {
-            loadMixcloudPlayer(wrapper, iframe, loadBtn);
         });
 
-        // Auto-load if user prefers reduced motion (better accessibility)
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            loadMixcloudPlayer(wrapper, iframe, loadBtn);
-        }
+        // Close modal handlers
+        closeBtn.addEventListener('click', function() {
+            closeMixcloudModal(modal, modalContent);
+        });
+
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeMixcloudModal(modal, modalContent);
+            }
+        });
+
+        // ESC key to close modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.style.display === 'block') {
+                closeMixcloudModal(modal, modalContent);
+            }
+        });
     }
 
     /**
-     * Load Mixcloud player iframe
+     * Open Mixcloud player modal
      * 
-     * @param {Element} wrapper Player wrapper element
-     * @param {Element} iframe Player iframe element
-     * @param {Element} button Load button element
+     * @param {Element} modal Modal element
+     * @param {Element} container Player container element  
+     * @param {string} cloudcastUrl Mixcloud URL
+     * @param {string} cloudcastName Cloudcast name
      */
-    function loadMixcloudPlayer(wrapper, iframe, button) {
-        const src = iframe.getAttribute('data-src');
+    function openMixcloudModal(modal, container, cloudcastUrl, cloudcastName) {
+        // Build embed URL
+        const embedParams = {
+            hide_cover: '1',
+            mini: '0',
+            light: '1',
+            hide_artwork: '0',
+            autoplay: '0'
+        };
         
-        if (!src) {
-            return;
-        }
+        const baseEmbedUrl = cloudcastUrl.replace('https://www.mixcloud.com/', 'https://www.mixcloud.com/widget/iframe/?feed=');
+        const paramString = Object.keys(embedParams).map(key => key + '=' + embedParams[key]).join('&');
+        const embedUrl = baseEmbedUrl + '&' + paramString;
+        
+        // Create iframe
+        const iframe = document.createElement('iframe');
+        iframe.src = embedUrl;
+        iframe.width = '100%';
+        iframe.height = '380';
+        iframe.frameBorder = '0';
+        iframe.allowFullscreen = true;
+        iframe.title = 'Mixcloud player for ' + cloudcastName;
+        
+        // Clear container and add iframe
+        container.innerHTML = '';
+        container.appendChild(iframe);
+        
+        // Show modal
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
 
-        // Show loading state
-        wrapper.classList.add('mixcloud-player-loading');
-        button.disabled = true;
-        button.innerHTML = '<span class="mixcloud-loading-spinner"></span>' + 
-                          wpMixcloudArchives.loadingText;
-
-        // Load the iframe
-        iframe.addEventListener('load', function() {
-            wrapper.classList.remove('mixcloud-player-loading');
-            wrapper.classList.add('mixcloud-player-loaded');
-            button.style.display = 'none';
-            iframe.style.display = 'block';
-        }, { once: true });
-
-        // Handle loading errors
-        iframe.addEventListener('error', function() {
-            wrapper.classList.remove('mixcloud-player-loading');
-            wrapper.classList.add('mixcloud-player-error');
-            button.innerHTML = '<span class="dashicons dashicons-warning"></span>' + 
-                             wpMixcloudArchives.errorText;
-            button.disabled = false;
-        }, { once: true });
-
-        // Set the source to start loading
-        iframe.src = src;
+    /**
+     * Close Mixcloud player modal
+     * 
+     * @param {Element} modal Modal element
+     * @param {Element} container Player container element
+     */
+    function closeMixcloudModal(modal, container) {
+        modal.style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling
+        
+        // Clear the iframe to stop playback
+        container.innerHTML = '';
     }
 
     /**

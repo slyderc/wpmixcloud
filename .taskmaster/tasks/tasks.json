@@ -982,11 +982,225 @@
             "testStrategy": "Combination of unit tests, integration tests, and manual testing to verify bug fixes and overall plugin stability"
           }
         ]
+      },
+      {
+        "id": 16,
+        "title": "Implement WordPress Plugin Lifecycle and Admin Enhancements",
+        "description": "Address AIDEV-TODO comments by implementing plugin activation/deactivation logic, enhancing the admin interface, creating admin assets, improving basic transient cache management, and integrating admin settings page hooks.",
+        "status": "done",
+        "dependencies": [
+          3,
+          4,
+          5,
+          12,
+          13
+        ],
+        "priority": "medium",
+        "details": "1. Plugin Activation/Deactivation:\n   - Implement register_activation_hook() to set up plugin options and database tables\n   - Implement register_deactivation_hook() to clean up plugin data\n   - Create an uninstall.php file for complete removal of plugin data\n\n2. Admin Interface Enhancements:\n   - Add a simple cache management field to the admin settings page\n   - Implement a \"Clear Cache\" button with AJAX functionality\n   - Update the options page layout for better UX\n\n3. Admin Assets:\n   - Create admin-specific CSS file (admin-style.css)\n   - Create admin-specific JS file (admin-script.js)\n   - Use wp_enqueue_style() and wp_enqueue_script() to load admin assets only on plugin pages\n\n4. Basic Transient Cache Management:\n   - Implement a simple function to clear all plugin-related transients\n   - Add hooks to clear transients on relevant actions (e.g., settings update, manual clear)\n   - Focus only on basic WordPress transient caching for API responses\n\n5. Admin Settings Integration:\n   - Use add_action('admin_menu') to add the plugin's settings page\n   - Implement settings sections and fields using add_settings_section() and add_settings_field()\n   - Use register_setting() to handle option sanitization and storage\n\n6. Code Refactoring:\n   - Review and refactor existing code to adhere to WordPress coding standards\n   - Implement proper nonce checks for all admin actions\n   - Use capability checks (current_user_can()) for all admin functionalities",
+        "testStrategy": "1. Activation/Deactivation:\n   - Activate the plugin and verify that all necessary options and tables are created\n   - Deactivate the plugin and ensure no functionality remains\n   - Uninstall the plugin and confirm all data is removed from the database\n\n2. Admin Interface:\n   - Navigate to the admin settings page and verify the new cache management field is present\n   - Test the \"Clear Cache\" button functionality\n   - Ensure the admin page layout is intuitive and responsive\n\n3. Admin Assets:\n   - Inspect the page source on admin pages to confirm admin-specific CSS and JS are loaded\n   - Verify admin assets are not loaded on front-end or non-plugin admin pages\n\n4. Basic Transient Cache Management:\n   - Manually clear cache and verify all plugin-related transients are removed\n   - Update settings and confirm related transients are cleared automatically\n   - Verify that API responses are properly cached using WordPress transients\n\n5. Admin Settings:\n   - Verify all settings sections and fields are displayed correctly\n   - Test saving settings and confirm they are stored and retrieved properly\n   - Attempt to input invalid data and verify proper sanitization\n\n6. Code Quality:\n   - Use WordPress coding standards sniffs (PHPCS) to verify code compliance\n   - Attempt to access admin functions without proper capabilities and ensure access is denied\n   - Review all admin actions for proper nonce implementation",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Plugin Activation Hook",
+            "description": "Create and implement the register_activation_hook() to set up plugin options and database tables.",
+            "status": "done",
+            "dependencies": [],
+            "details": "Use register_activation_hook() to create necessary database tables and set default options. Ensure proper error handling and logging.",
+            "testStrategy": "Create unit tests to verify database tables are created and default options are set correctly."
+          },
+          {
+            "id": 2,
+            "title": "Implement Plugin Deactivation Hook",
+            "description": "Create and implement the register_deactivation_hook() to clean up plugin data.",
+            "status": "done",
+            "dependencies": [
+              1
+            ],
+            "details": "Use register_deactivation_hook() to remove temporary data and perform necessary cleanup. Ensure no critical data is deleted.",
+            "testStrategy": "Develop tests to confirm temporary data is removed and critical data is preserved upon deactivation."
+          },
+          {
+            "id": 3,
+            "title": "Create Uninstall Script",
+            "description": "Develop an uninstall.php file for complete removal of plugin data when uninstalled.",
+            "status": "done",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create uninstall.php to remove all plugin-related data, including database tables and options. Implement safety checks to prevent accidental data loss.",
+            "testStrategy": "Test uninstall process to ensure all plugin data is removed without affecting other parts of the WordPress installation."
+          },
+          {
+            "id": 4,
+            "title": "Enhance Admin Interface",
+            "description": "Update the admin settings page with simple cache management features and improved layout.",
+            "status": "done",
+            "dependencies": [],
+            "details": "Add a basic cache management field and 'Clear Cache' button with AJAX functionality. Redesign the options page layout for better user experience.",
+            "testStrategy": "Conduct usability testing and gather feedback on the new admin interface design."
+          },
+          {
+            "id": 5,
+            "title": "Create and Enqueue Admin Assets",
+            "description": "Develop and properly enqueue admin-specific CSS and JS files.",
+            "status": "done",
+            "dependencies": [
+              4
+            ],
+            "details": "Create admin-style.css and admin-script.js. Use wp_enqueue_style() and wp_enqueue_script() to load these assets only on plugin admin pages.",
+            "testStrategy": "Verify that admin assets are loaded correctly on plugin pages and not on other admin pages."
+          },
+          {
+            "id": 6,
+            "title": "Implement Basic Transient Cache Management",
+            "description": "Develop simple functions to clear plugin-related transients and integrate with relevant hooks.",
+            "status": "done",
+            "dependencies": [
+              4
+            ],
+            "details": "Create a function to clear all plugin-related transients. Add hooks to clear transients on settings updates and manual clear actions. Focus only on basic WordPress transient caching for API responses.",
+            "testStrategy": "Develop unit tests for transient clearing functions and integration tests for hook functionality."
+          },
+          {
+            "id": 7,
+            "title": "Refactor and Secure Admin Functionality",
+            "description": "Review existing code, implement proper security checks, and adhere to WordPress coding standards.",
+            "status": "done",
+            "dependencies": [
+              4,
+              5,
+              6
+            ],
+            "details": "Refactor code to follow WordPress coding standards. Implement nonce checks for all admin actions and use capability checks (current_user_can()) for admin functionalities.",
+            "testStrategy": "Conduct a security audit and use automated tools to check adherence to WordPress coding standards."
+          }
+        ]
+      },
+      {
+        "id": 17,
+        "title": "Implement Mixcloud-Style Interface with Inline Players and Smart Filtering",
+        "description": "Redesign the current card layout to match Mixcloud interface patterns with expandable inline players, smart filtering system, and list-based layout for improved user experience, following the specific design requirements in docs/UI_mockup.png.",
+        "status": "pending",
+        "dependencies": [
+          5,
+          6,
+          8,
+          10,
+          12
+        ],
+        "priority": "high",
+        "details": "1. **Inline Player Implementation**:\n   - Modify the current player embedding to support inline expansion below each show\n   - Implement JavaScript to handle player toggling (show/hide)\n   - Ensure only one player can be active at a time\n   - Add automatic collapse of other players when a new one is activated\n   - Implement smooth transitions for player expansion/collapse\n\n2. **List Layout Redesign** (based on UI mockup):\n   - Implement horizontal list layout with 100px square thumbnails on left\n   - Structure each row with: thumbnail + play button overlay, title/subtitle, waveform visualization, duration badge, action buttons row\n   - Use clean white background (#FFFFFF) with subtle gray borders (#E5E7EB) between items\n   - Add purple play buttons (#8B5CF6) with white triangle icons\n   - Ensure consistent vertical spacing between list items\n   - Include action buttons row (heart, share, add, highlight, boost, menu, comments)\n   - Add genre tags as small gray text in bottom right\n\n3. **Smart Filter Categories**:\n   - Create filter tabs at the top styled as: \"All Shows (X)\", \"Recent (X)\", \"Popular (X)\", \"Long Mix (X)\", \"Short Mix (X)\"\n   - Style active tab with dark background, inactive tabs with light gray\n   - Implement dynamic category counts (e.g., \"All Shows (179)\")\n   - Parse API metadata to determine show counts for each category\n   - Implement AJAX-based filtering to update content without page reload\n   - Add visual indicators for active filters\n\n4. **Enhanced User Experience**:\n   - Ensure continuous browsing experience with inline players\n   - Optimize for mobile-friendly interactions\n   - Implement quick access to multiple shows\n   - Add smooth transitions between filtered views\n   - Ensure keyboard accessibility for all interactive elements\n   - Add hover states for all interactive elements\n   - Make waveform area clickable for seeking (future enhancement)\n\n5. **Technical Implementation**:\n   - Update the existing templates in the 'templates' directory\n   - Modify the shortcode handler to support the new layout options\n   - Create new JavaScript modules for player and filter functionality\n   - Update CSS with the new list-based styling\n   - Ensure backward compatibility with existing installations\n   - Implement the specific color scheme from the mockup",
+        "testStrategy": "1. **Functional Testing**:\n   - Verify inline player expands/collapses correctly when play button is clicked\n   - Confirm only one player can be active at a time\n   - Test automatic collapse of other players when a new one is activated\n   - Verify all filter categories display correct show counts\n   - Test each filter to ensure it displays the appropriate content\n   - Test AJAX filtering works without page reload\n   - Verify all action buttons (heart, share, add, etc.) function correctly\n\n2. **UI/UX Testing**:\n   - Verify list layout matches the mockup with all elements properly aligned\n   - Check that thumbnails are exactly 100x100px with centered play buttons\n   - Verify the color scheme matches specifications (white background, purple accents, gray borders)\n   - Test responsive behavior across multiple device sizes (mobile, tablet, desktop)\n   - Ensure proper spacing and visual hierarchy in the new layout\n   - Verify smooth transitions for player expansion/collapse\n   - Test keyboard navigation through the interface\n   - Verify hover states for all interactive elements\n\n3. **Performance Testing**:\n   - Measure page load time with the new interface\n   - Test performance with a large number of shows (100+)\n   - Verify AJAX filtering response time is acceptable\n   - Check memory usage with multiple players\n\n4. **Cross-browser Testing**:\n   - Test functionality in Chrome, Firefox, Safari, and Edge\n   - Verify consistent appearance across browsers\n   - Test on iOS and Android mobile browsers\n\n5. **Regression Testing**:\n   - Verify existing functionality continues to work\n   - Check that shortcode attributes still function correctly\n   - Ensure compatibility with the OnAir2 theme",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create HTML Structure for List-Based Layout",
+            "description": "Modify the PHP templates to generate list-style HTML instead of cards, establishing the foundation for the Mixcloud-style interface.",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Update templates in the 'templates' directory to replace card-based structure with list items. Each list item should contain: 100x100px thumbnail container with play button overlay, content area (title, subtitle, waveform visualization, duration badge), action buttons row (heart, share, add, highlight, boost, menu, comments), and genre tags. Ensure proper HTML5 semantic elements and accessibility attributes. Add necessary container elements and CSS class hooks for styling and JavaScript functionality.",
+            "testStrategy": "Validate HTML structure across different screen sizes. Ensure proper nesting of elements and verify all required data attributes are present for JavaScript interaction. Compare output to UI mockup for structural accuracy."
+          },
+          {
+            "id": 2,
+            "title": "Implement CSS Styling for List Layout",
+            "description": "Create CSS styles for the horizontal list layout with proper responsive design and visual hierarchy.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "Develop CSS for list items with flexbox/grid layout following the mockup specifications. Style 100x100px thumbnails with centered purple play button overlay (#8B5CF6). Implement white background (#FFFFFF) with light gray borders (#E5E7EB). Style title (bold, ~16px), subtitle (gray, ~14px), waveform area, duration badge, action buttons row, and genre tags. Create responsive breakpoints for mobile, tablet, and desktop views. Add hover states for all interactive elements. Ensure consistent spacing, alignment, and visual hierarchy matching the mockup.",
+            "testStrategy": "Test responsive behavior across multiple device sizes. Verify visual consistency with UI mockup. Check for any CSS conflicts with existing styles. Verify color values match the specified scheme."
+          },
+          {
+            "id": 3,
+            "title": "Develop Inline Player Toggle Functionality",
+            "description": "Implement JavaScript to handle player toggling with smooth transitions and ensure only one player can be active at a time.",
+            "status": "pending",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create a JavaScript module for player management. Implement click handlers for play buttons that toggle the visibility of inline players. Add logic to collapse any currently active player when a new one is activated. Implement smooth CSS transitions for expansion/collapse animations. Store player state in memory. Add event listeners for player completion to reset UI state. Ensure proper event delegation for dynamically loaded content.",
+            "testStrategy": "Test player toggling across different browsers. Verify only one player can be active at a time. Check transition smoothness and edge cases like rapid clicking."
+          },
+          {
+            "id": 4,
+            "title": "Implement Inline Player Embedding",
+            "description": "Modify the current player embedding system to support inline expansion below each show in the list.",
+            "status": "pending",
+            "dependencies": [
+              3
+            ],
+            "details": "Update the player embedding code to create placeholder containers within each list item. Modify the JavaScript to dynamically load player iframe/embed when a show is activated. Implement lazy loading to improve performance. Handle player initialization and destruction to prevent memory leaks. Ensure proper sizing and responsiveness of embedded players. Add loading indicators while players initialize.",
+            "testStrategy": "Test player embedding with various show types and lengths. Verify proper initialization and cleanup. Check for any performance issues with multiple player instances."
+          },
+          {
+            "id": 5,
+            "title": "Create Filter UI Components",
+            "description": "Design and implement the filter tabs UI at the top of the archive display with dynamic category counts.",
+            "status": "pending",
+            "dependencies": [
+              2
+            ],
+            "details": "Create HTML and CSS for filter tabs at the top of the archive following the mockup style. Implement tabs for each category (\"All Shows (X)\", \"Recent (X)\", \"Popular (X)\", \"Long Mix (X)\", \"Short Mix (X)\"). Style active tab with dark background, inactive tabs with light gray background. Add containers for dynamic count displays. Ensure proper spacing and alignment with the list view. Make filter UI responsive for all screen sizes. Add appropriate ARIA attributes for accessibility.",
+            "testStrategy": "Test filter UI rendering across different screen sizes. Verify proper styling of active/inactive states matches the mockup. Check accessibility with screen readers. Verify tab styling matches the mockup's \"Public (179)\", \"Private (0)\" style."
+          },
+          {
+            "id": 6,
+            "title": "Implement Filter Logic and API Integration",
+            "description": "Develop the backend logic to process API metadata and determine show counts for each filter category.",
+            "status": "pending",
+            "dependencies": [
+              5
+            ],
+            "details": "Create PHP functions to parse API response data and categorize shows. Implement logic to determine 'Recent' (e.g., last 30 days), 'Popular' (based on play counts), 'Long Mix' (>30 min), and 'Short Mix' (<30 min) categories. Calculate and store counts for each category. Update the shortcode handler to support the new filtering options. Ensure efficient data processing to minimize performance impact.",
+            "testStrategy": "Test with various API response datasets. Verify correct categorization of shows. Check performance with large datasets. Ensure backward compatibility with existing installations."
+          },
+          {
+            "id": 7,
+            "title": "Implement AJAX-Based Content Filtering",
+            "description": "Develop frontend JavaScript to handle filter interactions and update content without page reload.",
+            "status": "pending",
+            "dependencies": [
+              5,
+              6
+            ],
+            "details": "Create JavaScript module for filter functionality. Implement click handlers for filter buttons. Add AJAX request handling to fetch filtered content from the server. Implement DOM updates to replace list content with filtered results. Add loading indicators during content refresh. Maintain filter state in URL parameters for shareable links. Implement browser history management for back/forward navigation. Add smooth transitions between filtered views.",
+            "testStrategy": "Test filter functionality with various selection combinations. Verify AJAX requests and response handling. Check browser history behavior and URL parameter management. Test performance with large result sets."
+          },
+          {
+            "id": 8,
+            "title": "Implement Action Buttons and Interactive Elements",
+            "description": "Add the action buttons row (heart, share, add, highlight, boost, menu, comments) and make all interactive elements functional.",
+            "status": "pending",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement the action buttons row as shown in the mockup. Add appropriate icons for each action button. Create hover states for all interactive elements. Implement click handlers for each button. Make the waveform area clickable for seeking (as a future enhancement). Add tooltips for action buttons. Ensure proper spacing and alignment of all interactive elements. Implement responsive behavior for smaller screens.",
+            "testStrategy": "Test all action buttons for proper functionality. Verify hover states work correctly. Check responsive behavior of action buttons on smaller screens. Verify tooltips display correctly."
+          },
+          {
+            "id": 9,
+            "title": "Enhance Accessibility and Finalize UX Improvements",
+            "description": "Implement keyboard accessibility, focus management, and final UX enhancements for the complete interface.",
+            "status": "pending",
+            "dependencies": [
+              3,
+              4,
+              7,
+              8
+            ],
+            "details": "Add keyboard navigation support for all interactive elements. Implement proper focus management when opening/closing players and changing filters. Add ARIA live regions for dynamic content updates. Ensure proper tab order throughout the interface. Implement keyboard shortcuts for common actions. Add final polish to transitions and animations. Optimize for touch interactions on mobile devices. Conduct final cross-browser testing and bug fixes.",
+            "testStrategy": "Perform keyboard navigation testing throughout the interface. Test with screen readers and accessibility tools. Verify focus management during dynamic content changes. Test on touch devices for proper interaction areas and behavior."
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-06-29T01:23:35.165Z",
-      "updated": "2025-06-29T17:21:02.249Z",
+      "updated": "2025-07-01T00:58:32.599Z",
       "description": "Tasks for master context"
     }
   }

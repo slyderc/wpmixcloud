@@ -231,3 +231,78 @@ Distribution (via npm run package):
 - **Caching**: Leverage WordPress object cache and transients
 - **Error Handling**: WordPress-style error objects (`WP_Error`)
 - **Rate Limiting**: Implement circuit breaker for API protection
+
+## Required Taskmaster Integration
+
+This project requires Taskmaster for task management and progress tracking. All development work must integrate with Taskmaster workflows.
+
+### Initial Setup
+```bash
+# Initialize Taskmaster in project (run once)
+task-master init --project-root=/Users/clint/Development/wpmixcloud
+```
+
+### Essential Taskmaster Commands
+```bash
+# List current tasks with tree view
+task-master list --tag=<active-tag> --tree
+
+# Get next priority task
+task-master next --tag=<active-tag>
+
+# Update task status
+task-master set-status --id=<task-id> --status=done
+task-master set-status --id=<task-id> --status=in-progress
+task-master set-status --id=<task-id> --status=blocked --reason="<explanation>"
+
+# Show task details before implementation
+task-master show <task-id>
+
+# Research technical approaches
+task-master research "<technical query>" --tag=<active-tag> --save-to=<task-id>
+
+# Add implementation notes
+task-master add-note --id=<task-id> --note="<implementation details>"
+```
+
+### Task Management Workflow
+1. **Query Status**: Always check current task status before starting work
+2. **Validate Dependencies**: Ensure prerequisite tasks are marked `done`
+3. **Update Progress**: Mark tasks `in-progress` when starting, `done` when complete
+4. **Document Decisions**: Use task notes for technical decisions and implementation details
+5. **Research Integration**: Save research findings to relevant task IDs
+
+### Project Structure Updates
+
+The current project includes additional directories not covered in the original documentation:
+
+```
+wp-mixcloud-archives/
+├── docs/                 # Comprehensive documentation
+│   ├── admin-configuration.md
+│   ├── development.md
+│   ├── installation.md
+│   ├── limitations.md
+│   └── shortcode-usage.md
+├── tests/                # Testing framework and results
+│   ├── manual-testing-checklist.md
+│   ├── setup-instructions.md
+│   ├── test-config.php
+│   └── test-results.md
+├── templates/            # WordPress template files
+├── AGENTS.md             # AI agent coordination instructions
+├── QUICKSTART.md         # Quick development setup guide
+└── logs/                 # Application and development logs
+```
+
+### Testing Framework
+The `tests/` directory contains:
+- **Manual Testing**: Checklist-based testing approach
+- **Test Configuration**: WordPress test environment setup
+- **Results Tracking**: Historical test results and regression tracking
+- **Setup Instructions**: Environment preparation for testing
+
+### Documentation Standards
+- **Comprehensive Docs**: The `docs/` directory provides end-user and developer documentation
+- **AGENTS.md**: Provides coordination instructions for AI development assistants
+- **QUICKSTART.md**: Streamlined setup guide for rapid development iteration

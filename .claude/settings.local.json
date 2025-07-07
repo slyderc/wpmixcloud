@@ -25,7 +25,20 @@
       "mcp__puppeteer-mcp-server__puppeteer_screenshot",
       "mcp__puppeteer-mcp-server__puppeteer_click",
       "mcp__puppeteer-mcp-server__puppeteer_fill",
-      "mcp__puppeteer-mcp-server__puppeteer_evaluate"
+      "mcp__puppeteer-mcp-server__puppeteer_evaluate",
+      "Bash(rg:*)",
+      "mcp__taskmaster-ai__add_task",
+      "mcp__taskmaster-ai__analyze_project_complexity",
+      "mcp__taskmaster-ai__add_dependency",
+      "Bash(npx @wordpress/env:*)",
+      "Bash(npx wp-env run cli wp plugin activate:*)",
+      "Bash(npx wp-env run cli wp plugin:*)",
+      "Bash(npx wp-env run cli wp post create:*)",
+      "Bash(npx wp-env run cli wp post list:*)",
+      "mcp__puppeteer-mcp-server__puppeteer_connect_active_tab",
+      "Bash(pkill:*)",
+      "Bash(npx wp-env:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }
