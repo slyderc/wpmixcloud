@@ -374,8 +374,8 @@ class WP_Mixcloud_Archives_Admin {
                     
                     <h4><?php esc_html_e('Display Options', 'wp-mixcloud-archives'); ?></h4>
                     <ul style="margin-left: 20px;">
-                        <li><strong>limit</strong> - <?php esc_html_e('Number of shows to fetch (1-50, default: 10)', 'wp-mixcloud-archives'); ?></li>
-                        <li><strong>days</strong> - <?php esc_html_e('Show archives from last X days (default: 30)', 'wp-mixcloud-archives'); ?></li>
+                        <li><strong>limit</strong> - <?php esc_html_e('Number of shows to fetch (1-100, default: 10)', 'wp-mixcloud-archives'); ?></li>
+                        <li><strong>days</strong> - <?php esc_html_e('Show archives from last X days (1-365, default: 30)', 'wp-mixcloud-archives'); ?></li>
                         <li><strong>start_date</strong> - <?php esc_html_e('Show archives from date (YYYY-MM-DD)', 'wp-mixcloud-archives'); ?></li>
                         <li><strong>end_date</strong> - <?php esc_html_e('Show archives until date (YYYY-MM-DD)', 'wp-mixcloud-archives'); ?></li>
                         <li><strong>per_page</strong> - <?php esc_html_e('Items per page (1-50, default: 10)', 'wp-mixcloud-archives'); ?></li>
@@ -397,8 +397,8 @@ class WP_Mixcloud_Archives_Admin {
                     <p><strong><?php esc_html_e('Basic display:', 'wp-mixcloud-archives'); ?></strong><br>
                     <code>[mixcloud_archives account="NowWaveRadio"]</code></p>
                     
-                    <p><strong><?php esc_html_e('Show 20 items with full-size players:', 'wp-mixcloud-archives'); ?></strong><br>
-                    <code>[mixcloud_archives account="username" limit="20" mini_player="no"]</code></p>
+                    <p><strong><?php esc_html_e('Show 25 items with full-size players:', 'wp-mixcloud-archives'); ?></strong><br>
+                    <code>[mixcloud_archives account="username" limit="25" mini_player="no"]</code></p>
                     
                     <p><strong><?php esc_html_e('Recent shows (last 7 days):', 'wp-mixcloud-archives'); ?></strong><br>
                     <code>[mixcloud_archives account="username" days="7"]</code></p>
@@ -408,6 +408,9 @@ class WP_Mixcloud_Archives_Admin {
                     
                     <p><strong><?php esc_html_e('Minimal interface:', 'wp-mixcloud-archives'); ?></strong><br>
                     <code>[mixcloud_archives account="username" show_date_filter="no" show_social="no"]</code></p>
+                    
+                    <p><strong><?php esc_html_e('High-volume display:', 'wp-mixcloud-archives'); ?></strong><br>
+                    <code>[mixcloud_archives account="username" limit="50" per_page="20"]</code></p>
                 </div>
                 
                 <p><em><?php esc_html_e('For complete documentation, see the plugin documentation files.', 'wp-mixcloud-archives'); ?></em></p>

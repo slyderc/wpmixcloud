@@ -604,9 +604,11 @@ class WP_Mixcloud_Archives {
         $html .= '</div>';
         $html .= '</div>'; // .mixcloud-modal
         
-        // AIDEV-NOTE: Add pagination controls if enabled
-        if (!empty($options['show_pagination']) && !empty($options['pagination'])) {
-            $html .= $this->generate_pagination_html($options['pagination'], $options['account']);
+        // AIDEV-NOTE: Add pagination controls if enabled using compact style
+        if (!empty($options['show_pagination']) && !empty($options['pagination']) && $options['pagination']['total_pages'] > 1) {
+            $html .= '<div class="mixcloud-bottom-pagination">';
+            $html .= $this->generate_compact_pagination_html($options['pagination'], $options['account']);
+            $html .= '</div>';
         }
         
         $html .= '</div>'; // .mixcloud-archives-container
@@ -821,135 +823,6 @@ class WP_Mixcloud_Archives {
         return $html;
     }
     
-    /**
-     * Generate pagination HTML
-     *
-     * @param array  $pagination Pagination information
-     * @param string $account    Mixcloud account name
-     * @return string            Pagination HTML
-     */
-    private function generate_pagination_html($pagination, $account) {
-        // Don't show pagination if there's only one page
-        if ($pagination['total_pages'] <= 1) {
-            return '';
-        }
-        
-        $html = '<div class="mixcloud-pagination" data-account="' . esc_attr($account) . '">';
-        
-        // Pagination info
-        $html .= '<div class="mixcloud-pagination-info">';
-        $html .= esc_html(sprintf(
-            __('Showing %d-%d of %d shows', 'wp-mixcloud-archives'),
-            $pagination['start_item'],
-            $pagination['end_item'],
-            $pagination['total_items']
-        ));
-        $html .= '</div>';
-        
-        $html .= '<div class="mixcloud-pagination-controls">';
-        
-        // Previous button
-        if ($pagination['has_prev']) {
-            $html .= '<button type="button" class="mixcloud-pagination-btn mixcloud-pagination-prev" ' .
-                     'data-page="' . esc_attr($pagination['prev_page']) . '" ' .
-                     'data-account="' . esc_attr($account) . '">';
-            $html .= '<span class="dashicons dashicons-arrow-left-alt2"></span>';
-            $html .= esc_html__('Previous', 'wp-mixcloud-archives');
-            $html .= '</button>';
-        } else {
-            $html .= '<span class="mixcloud-pagination-btn mixcloud-pagination-disabled">';
-            $html .= '<span class="dashicons dashicons-arrow-left-alt2"></span>';
-            $html .= esc_html__('Previous', 'wp-mixcloud-archives');
-            $html .= '</span>';
-        }
-        
-        // Page numbers
-        $html .= '<div class="mixcloud-pagination-numbers">';
-        $html .= $this->generate_page_numbers($pagination, $account);
-        $html .= '</div>';
-        
-        // Next button
-        if ($pagination['has_next']) {
-            $html .= '<button type="button" class="mixcloud-pagination-btn mixcloud-pagination-next" ' .
-                     'data-page="' . esc_attr($pagination['next_page']) . '" ' .
-                     'data-account="' . esc_attr($account) . '">';
-            $html .= esc_html__('Next', 'wp-mixcloud-archives');
-            $html .= '<span class="dashicons dashicons-arrow-right-alt2"></span>';
-            $html .= '</button>';
-        } else {
-            $html .= '<span class="mixcloud-pagination-btn mixcloud-pagination-disabled">';
-            $html .= esc_html__('Next', 'wp-mixcloud-archives');
-            $html .= '<span class="dashicons dashicons-arrow-right-alt2"></span>';
-            $html .= '</span>';
-        }
-        
-        $html .= '</div>'; // .mixcloud-pagination-controls
-        $html .= '</div>'; // .mixcloud-pagination
-        
-        return $html;
-    }
-    
-    /**
-     * Generate page numbers for pagination
-     *
-     * @param array  $pagination Pagination information
-     * @param string $account    Mixcloud account name
-     * @return string            Page numbers HTML
-     */
-    private function generate_page_numbers($pagination, $account) {
-        $current_page = $pagination['current_page'];
-        $total_pages = $pagination['total_pages'];
-        $html = '';
-        
-        // AIDEV-NOTE: Intelligent page number display logic
-        $range = 2; // Show 2 pages on each side of current page
-        $start = max(1, $current_page - $range);
-        $end = min($total_pages, $current_page + $range);
-        
-        // Always show first page
-        if ($start > 1) {
-            $html .= $this->generate_page_number_link(1, $account, $current_page);
-            if ($start > 2) {
-                $html .= '<span class="mixcloud-pagination-ellipsis">...</span>';
-            }
-        }
-        
-        // Show page range around current page
-        for ($i = $start; $i <= $end; $i++) {
-            $html .= $this->generate_page_number_link($i, $account, $current_page);
-        }
-        
-        // Always show last page
-        if ($end < $total_pages) {
-            if ($end < $total_pages - 1) {
-                $html .= '<span class="mixcloud-pagination-ellipsis">...</span>';
-            }
-            $html .= $this->generate_page_number_link($total_pages, $account, $current_page);
-        }
-        
-        return $html;
-    }
-    
-    /**
-     * Generate single page number link
-     *
-     * @param int    $page_number Page number
-     * @param string $account     Mixcloud account name
-     * @param int    $current_page Current page number
-     * @return string             Page number HTML
-     */
-    private function generate_page_number_link($page_number, $account, $current_page) {
-        if ($page_number == $current_page) {
-            return '<span class="mixcloud-pagination-number mixcloud-pagination-current" aria-current="page">' . 
-                   esc_html($page_number) . '</span>';
-        } else {
-            return '<button type="button" class="mixcloud-pagination-number mixcloud-pagination-link" ' .
-                   'data-page="' . esc_attr($page_number) . '" ' .
-                   'data-account="' . esc_attr($account) . '" ' .
-                   'aria-label="' . esc_attr(sprintf(__('Go to page %d', 'wp-mixcloud-archives'), $page_number)) . '">' .
-                   esc_html($page_number) . '</button>';
-        }
-    }
     
     /**
      * Generate HTML for a single cloudcast
@@ -1511,13 +1384,20 @@ class WP_Mixcloud_Archives {
             }
         }
         
-        // Generate pagination HTML
-        $pagination_html = $this->generate_pagination_html($pagination_info, $account);
+        // Generate compact pagination HTML
+        $pagination_html = '';
+        if ($pagination_info['total_pages'] > 1) {
+            $pagination_html = '<div class="mixcloud-bottom-pagination">';
+            $pagination_html .= $this->generate_compact_pagination_html($pagination_info, $account);
+            $pagination_html .= '</div>';
+        }
         
         // Send successful response
         wp_send_json_success(array(
             'table_html' => $table_html,
+            'list_html' => $table_html, // AIDEV-NOTE: JavaScript expects list_html property
             'pagination_html' => $pagination_html,
+            'compact_pagination_html' => $pagination_html, // AIDEV-NOTE: JavaScript expects compact_pagination_html property
             'pagination_info' => $pagination_info,
             'count' => count($paginated_data),
             'message' => sprintf(

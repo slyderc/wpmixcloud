@@ -200,10 +200,12 @@
                     }
                 });
                 
-                // Update pagination visibility based on filter
-                const pagination = document.querySelector('.mixcloud-pagination');
-                if (pagination) {
-                    pagination.style.display = filter === 'all' ? 'flex' : 'none';
+                // Update compact pagination visibility based on filter
+                const compactPagination = document.querySelectorAll('.mixcloud-compact-pagination');
+                if (compactPagination) {
+                    compactPagination.forEach(cp => {
+                        cp.style.display = filter === 'all' ? 'flex' : 'none';
+                    });
                 }
             }
             
@@ -671,62 +673,35 @@
         }, 5000);
     }
     
-    /**
-     * Initialize pagination functionality
-     */
-    function initPagination() {
-        const paginationContainers = document.querySelectorAll('.mixcloud-pagination');
-        
-        paginationContainers.forEach(function(container) {
-            const account = container.getAttribute('data-account');
-            
-            // Handle pagination button clicks
-            const buttons = container.querySelectorAll('.mixcloud-pagination-btn, .mixcloud-pagination-link');
-            buttons.forEach(function(button) {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    const page = this.getAttribute('data-page');
-                    if (page && !this.classList.contains('mixcloud-pagination-disabled')) {
-                        navigateToPage(account, parseInt(page));
-                    }
-                });
-            });
-            
-            // Handle keyboard navigation
-            const numberButtons = container.querySelectorAll('.mixcloud-pagination-number');
-            numberButtons.forEach(function(button) {
-                button.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        this.click();
-                    }
-                });
-            });
-        });
-    }
     
     /**
      * Initialize compact pagination functionality
+     * AIDEV-NOTE: Old pagination system removed - only compact pagination remains
      */
     function initCompactPagination() {
+        console.log('AIDEV-DEBUG: initCompactPagination called');
         const compactPaginationContainers = document.querySelectorAll('.mixcloud-compact-pagination');
+        console.log('AIDEV-DEBUG: Found pagination containers:', compactPaginationContainers.length);
         
         compactPaginationContainers.forEach(function(container) {
             // Get account from the parent container
             const archiveContainer = container.closest('.mixcloud-archives-container');
             const account = archiveContainer ? archiveContainer.getAttribute('data-account') : null;
+            console.log('AIDEV-DEBUG: Container account:', account);
             
             if (!account) return;
             
             // Handle compact pagination button clicks
             const buttons = container.querySelectorAll('.mixcloud-compact-pagination-btn');
+            console.log('AIDEV-DEBUG: Found buttons in container:', buttons.length);
             buttons.forEach(function(button) {
                 button.addEventListener('click', function(e) {
+                    console.log('AIDEV-DEBUG: Pagination button clicked!', this.getAttribute('data-page'));
                     e.preventDefault();
                     
                     const page = this.getAttribute('data-page');
                     if (page && !this.classList.contains('mixcloud-compact-pagination-disabled')) {
+                        console.log('AIDEV-DEBUG: Calling navigateToPage with:', account, parseInt(page));
                         navigateToPage(account, parseInt(page));
                     }
                 });
@@ -746,6 +721,7 @@
     
     /**
      * Navigate to a specific page with enhanced AJAX handling
+     * AIDEV-NOTE: Updated to handle only compact pagination - old pagination system removed
      * 
      * @param {string} account Account name
      * @param {number} page Page number
@@ -753,9 +729,10 @@
     function navigateToPage(account, page) {
         const container = document.querySelector('.mixcloud-archives-container[data-account="' + account + '"]');
         const table = container ? container.querySelector('.mixcloud-archives-table tbody') : null;
-        const pagination = container ? container.querySelector('.mixcloud-pagination') : null;
+        const list = container ? container.querySelector('.mixcloud-archives-list') : null;
+        const compactPagination = container ? container.querySelectorAll('.mixcloud-compact-pagination') : null;
         
-        if (!container || !table || !pagination) {
+        if (!container || (!table && !list) || !compactPagination) {
             return;
         }
         
@@ -774,11 +751,18 @@
         const endDate = endDateInput ? endDateInput.value : '';
         
         // Show loading state
-        pagination.classList.add('mixcloud-pagination-loading');
-        table.classList.add('mixcloud-table-loading');
+        if (compactPagination) {
+            compactPagination.forEach(cp => cp.classList.add('mixcloud-pagination-loading'));
+        }
+        if (table) {
+            table.classList.add('mixcloud-table-loading');
+        }
+        if (list) {
+            list.classList.add('mixcloud-table-loading');
+        }
         
-        // Get per_page setting from current pagination info (or use default)
-        const perPageFromInfo = pagination.querySelector('.mixcloud-pagination-info');
+        // Get per_page setting from current compact pagination info (or use default)
+        const perPageFromInfo = compactPagination.length > 0 ? compactPagination[0].querySelector('.mixcloud-compact-pagination-info') : null;
         let perPage = 10; // default
         
         // Prepare AJAX data
@@ -808,10 +792,21 @@
         .then(data => {
             if (data.success) {
                 // Update table content
-                table.innerHTML = data.data.table_html;
+                if (table) {
+                    table.innerHTML = data.data.table_html;
+                }
                 
-                // Update pagination controls
-                pagination.outerHTML = data.data.pagination_html;
+                // Update list content
+                if (list) {
+                    list.innerHTML = data.data.list_html;
+                }
+                
+                // Update compact pagination controls
+                if (data.data.compact_pagination_html && compactPagination) {
+                    compactPagination.forEach(cp => {
+                        cp.outerHTML = data.data.compact_pagination_html;
+                    });
+                }
                 
                 // Re-initialize functionality for new content
                 initMixcloudPlayers();
@@ -819,7 +814,6 @@
                 handleArtworkErrors();
                 initPlayCountAnimations();
                 initFilters();
-                initPagination(); // Re-init pagination for new controls
                 initCompactPagination(); // Re-init compact pagination for new controls
                 
                 // Scroll to top of container with smooth animation
@@ -844,11 +838,23 @@
             activeRequests.delete(requestKey);
             
             // Reset loading states
-            const currentPagination = document.querySelector('.mixcloud-pagination[data-account="' + account + '"]');
-            if (currentPagination) {
-                currentPagination.classList.remove('mixcloud-pagination-loading');
+            const currentContainer = document.querySelector('.mixcloud-archives-container[data-account="' + account + '"]');
+            if (currentContainer) {
+                const currentCompactPagination = currentContainer.querySelectorAll('.mixcloud-compact-pagination');
+                if (currentCompactPagination) {
+                    currentCompactPagination.forEach(cp => cp.classList.remove('mixcloud-pagination-loading'));
+                }
+                
+                const currentTable = currentContainer.querySelector('.mixcloud-archives-table tbody');
+                if (currentTable) {
+                    currentTable.classList.remove('mixcloud-table-loading');
+                }
+                
+                const currentList = currentContainer.querySelector('.mixcloud-archives-list');
+                if (currentList) {
+                    currentList.classList.remove('mixcloud-table-loading');
+                }
             }
-            table.classList.remove('mixcloud-table-loading');
         });
     }
     
@@ -1035,7 +1041,6 @@
         initPlayCountAnimations();
         handleArtworkErrors();
         initDateFiltering();
-        initPagination();
         initCompactPagination();
         initSocialSharing();
     }

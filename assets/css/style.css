@@ -280,6 +280,16 @@
     }
 }
 
+/* Bottom Pagination Controls */
+.mixcloud-bottom-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 24px 0;
+    padding: 16px 0;
+    border-top: 1px solid var(--mixcloud-border);
+}
+
 /* List layout styles */
 .mixcloud-archives-list {
     display: flex;
@@ -1334,166 +1344,6 @@
     }
 }
 
-/* Pagination Styles */
-.mixcloud-pagination {
-    margin: 24px 0;
-    text-align: center;
-}
-
-.mixcloud-pagination-info {
-    font-size: 14px;
-    color: var(--onair-text-secondary);
-    margin-bottom: 12px;
-    font-family: var(--onair-font-primary);
-    font-weight: 500;
-}
-
-.mixcloud-pagination-controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.mixcloud-pagination-btn {
-    padding: 10px 14px;
-    border: 2px solid var(--onair-border);
-    background: var(--onair-bg-secondary);
-    color: var(--onair-text-secondary);
-    text-decoration: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.3s ease;
-    min-height: 42px;
-    font-family: var(--onair-font-primary);
-}
-
-.mixcloud-pagination-btn:hover:not(.mixcloud-pagination-disabled) {
-    background: var(--onair-bg-tertiary);
-    border-color: var(--onair-accent);
-    color: var(--onair-accent);
-    transform: translateY(-1px);
-}
-
-.mixcloud-pagination-btn.mixcloud-pagination-disabled {
-    color: var(--onair-text-muted);
-    cursor: not-allowed;
-    opacity: 0.5;
-    transform: none;
-}
-
-.mixcloud-pagination-numbers {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-}
-
-.mixcloud-pagination-number {
-    padding: 10px 14px;
-    border: 2px solid var(--onair-border);
-    background: var(--onair-bg-secondary);
-    color: var(--onair-text-secondary);
-    text-decoration: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    min-width: 42px;
-    min-height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    font-family: var(--onair-font-primary);
-}
-
-.mixcloud-pagination-number:hover:not(.mixcloud-pagination-current) {
-    background: var(--onair-bg-tertiary);
-    border-color: var(--onair-accent);
-    color: var(--onair-accent);
-    transform: translateY(-1px);
-}
-
-.mixcloud-pagination-number.mixcloud-pagination-current {
-    background: linear-gradient(135deg, var(--onair-accent), var(--onair-accent-hover));
-    border-color: var(--onair-accent);
-    color: var(--onair-text-primary);
-    font-weight: 700;
-    cursor: default;
-    box-shadow: 0 2px 8px rgba(24, 99, 220, 0.3);
-}
-
-.mixcloud-pagination-ellipsis {
-    padding: 10px 6px;
-    color: var(--onair-text-muted);
-    font-size: 14px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    min-height: 42px;
-    font-family: var(--onair-font-primary);
-}
-
-/* Pagination Loading State */
-.mixcloud-pagination-loading .mixcloud-pagination-btn,
-.mixcloud-pagination-loading .mixcloud-pagination-number {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-/* Responsive Pagination */
-@media screen and (max-width: 768px) {
-    .mixcloud-pagination-controls {
-        gap: 3px;
-    }
-    
-    .mixcloud-pagination-btn,
-    .mixcloud-pagination-number {
-        padding: 6px 8px;
-        font-size: 13px;
-        min-width: 32px;
-        min-height: 32px;
-    }
-    
-    .mixcloud-pagination-prev,
-    .mixcloud-pagination-next {
-        flex-shrink: 0;
-    }
-    
-    .mixcloud-pagination-numbers {
-        overflow-x: auto;
-        max-width: 200px;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-    
-    .mixcloud-pagination-numbers::-webkit-scrollbar {
-        display: none;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    .mixcloud-pagination-btn span,
-    .mixcloud-pagination-prev span:not(.dashicons),
-    .mixcloud-pagination-next span:not(.dashicons) {
-        display: none;
-    }
-    
-    .mixcloud-pagination-btn {
-        padding: 6px;
-        min-width: 32px;
-    }
-    
-    .mixcloud-pagination-info {
-        font-size: 12px;
-    }
-}
 
 /* Social Sharing Styles */
 .mixcloud-social-column,
