@@ -9,8 +9,8 @@
     --mixcloud-bg-primary: #0F0F0F;        /* Dark background */
     --mixcloud-bg-secondary: #1A1A1A;     /* Slightly lighter dark */
     --mixcloud-bg-tertiary: #252525;      /* Hover background */
-    --mixcloud-accent: #8B5CF6;           /* Purple accent color */
-    --mixcloud-accent-hover: #7C3AED;     /* Darker purple for hover */
+    --mixcloud-accent: #fbb53c;           /* Golden accent color */
+    --mixcloud-accent-hover: #e6a135;     /* Darker golden for hover */
     --mixcloud-text-primary: #FFFFFF;     /* White text */
     --mixcloud-text-secondary: #A0A0A0;   /* Gray text */
     --mixcloud-text-muted: #6B7280;       /* Muted gray text */
@@ -190,105 +190,16 @@
     background: var(--mixcloud-text-muted);
 }
 
-/* Compact Pagination Controls (Header Bar) */
-.mixcloud-compact-pagination {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-}
 
-.mixcloud-compact-pagination-nav {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.mixcloud-compact-pagination-btn {
-    width: 32px;
-    height: 32px;
-    border: 2px solid var(--mixcloud-border);
-    background: var(--mixcloud-bg-secondary);
-    color: var(--mixcloud-text-secondary);
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: var(--onair-font-primary);
-}
-
-.mixcloud-compact-pagination-btn:hover:not(.mixcloud-compact-pagination-disabled) {
-    background: var(--mixcloud-bg-tertiary);
-    border-color: var(--mixcloud-accent);
-    color: var(--mixcloud-accent);
-    transform: translateY(-1px);
-}
-
-.mixcloud-compact-pagination-btn.mixcloud-compact-pagination-disabled {
-    color: var(--mixcloud-text-muted);
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-
-.mixcloud-compact-pagination-current {
-    background: linear-gradient(135deg, var(--mixcloud-accent), var(--mixcloud-accent-hover));
-    border-color: var(--mixcloud-accent);
-    color: var(--mixcloud-text-primary);
-    font-weight: 700;
-    cursor: default;
-}
-
-.mixcloud-compact-pagination-info {
-    font-size: 13px;
-    color: var(--mixcloud-text-secondary);
-    font-family: var(--onair-font-primary);
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-/* Responsive behavior for compact pagination */
+/* Responsive behavior for filter dropdown */
 @media screen and (max-width: 768px) {
     .mixcloud-filter-dropdown-container {
         flex-direction: column;
         align-items: stretch;
         gap: 16px;
     }
-    
-    .mixcloud-compact-pagination {
-        justify-content: center;
-        align-self: center;
-    }
-    
-    .mixcloud-compact-pagination-info {
-        font-size: 12px;
-    }
-    
-    .mixcloud-compact-pagination-btn {
-        width: 28px;
-        height: 28px;
-        font-size: 11px;
-    }
 }
 
-@media screen and (max-width: 480px) {
-    .mixcloud-compact-pagination-info {
-        display: none;
-    }
-}
-
-/* Bottom Pagination Controls */
-.mixcloud-bottom-pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 24px 0;
-    padding: 16px 0;
-    border-top: 1px solid var(--mixcloud-border);
-}
 
 /* List layout styles */
 .mixcloud-archives-list {

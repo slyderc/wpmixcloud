@@ -105,8 +105,6 @@ class WP_Mixcloud_Archives {
         // AIDEV-NOTE: Register AJAX handlers for date filtering and pagination
         add_action('wp_ajax_mixcloud_filter_by_date', array($this, 'ajax_filter_by_date'));
         add_action('wp_ajax_nopriv_mixcloud_filter_by_date', array($this, 'ajax_filter_by_date'));
-        add_action('wp_ajax_mixcloud_paginate', array($this, 'ajax_paginate'));
-        add_action('wp_ajax_nopriv_mixcloud_paginate', array($this, 'ajax_paginate'));
         
         // AIDEV-NOTE: Register cache warming action
         add_action('mixcloud_warm_cache_single', array($this, 'warm_single_account_cache'));
@@ -368,16 +366,13 @@ class WP_Mixcloud_Archives {
         // Parse shortcode attributes with defaults
         $atts = shortcode_atts(array(
             'account'          => '',
-            'days'             => 30,
+            'days'             => 0, // AIDEV-NOTE: 0 = show all shows (no date filtering)
             'limit'            => 10,
             'lazy_load'        => 'yes',
             'mini_player'      => 'yes',
             'show_date_filter' => 'yes',
             'start_date'       => '',
             'end_date'         => '',
-            'page'             => 1,
-            'per_page'         => 10,
-            'show_pagination'  => 'yes',
             'show_social'      => 'yes',
         ), $atts, 'mixcloud_archives');
         
@@ -392,13 +387,10 @@ class WP_Mixcloud_Archives {
         $account = sanitize_text_field($atts['account']);
         $days = absint($atts['days']);
         $limit = absint($atts['limit']);
-        $page = max(1, absint($atts['page'])); // Ensure page is at least 1
-        $per_page = absint($atts['per_page']);
         
-        // Set reasonable limits
-        $days = max(1, min($days, 365)); // Between 1 and 365 days
-        $limit = max(1, min($limit, 100)); // Between 1 and 100 results for API
-        $per_page = max(1, min($per_page, 50)); // Between 1 and 50 results per page
+        // Set reasonable limits  
+        $days = max(0, min($days, 365)); // Between 0 and 365 days (0 = show all)
+        $limit = 0; // AIDEV-NOTE: Remove limit to fetch all shows
         
         // Get cloudcasts from API with simple caching
         $cache_args = array(
@@ -408,7 +400,22 @@ class WP_Mixcloud_Archives {
         
         // AIDEV-NOTE: Simple transient caching for API responses
         $cache_key = 'mixcloud_cloudcasts_' . md5($account . serialize($cache_args));
+        
+        // AIDEV-NOTE: Allow cache clearing via URL parameter for testing
+        if (isset($_GET['clear_mixcloud_cache']) && $_GET['clear_mixcloud_cache'] === '1') {
+            delete_transient($cache_key);
+            $this->get_api_handler()->clear_user_cache($account);
+            $this->get_api_handler()->clear_all_cache(); // Clear all cache to be thorough
+        }
+        
         $cloudcasts_data = get_transient($cache_key);
+        
+        // AIDEV-NOTE: Debug logging when debugging cache issues
+        if (isset($_GET['debug_mixcloud']) && $_GET['debug_mixcloud'] === '1') {
+            error_log("Mixcloud Debug: Cache key: " . $cache_key);
+            error_log("Mixcloud Debug: Cache hit: " . ($cloudcasts_data !== false ? 'YES' : 'NO'));
+            error_log("Mixcloud Debug: Args: " . print_r($cache_args, true));
+        }
         
         if (false === $cloudcasts_data) {
             $cloudcasts_data = $this->get_api_handler()->get_user_cloudcasts($account, $cache_args);
@@ -443,32 +450,46 @@ class WP_Mixcloud_Archives {
                 $atts['start_date'], 
                 $atts['end_date']
             );
-        } elseif ($days < 365) {
+        } elseif ($days > 0 && $days < 365) {
             $cloudcasts_data['data'] = $this->filter_cloudcasts_by_date($cloudcasts_data['data'], $days);
         }
+        // AIDEV-NOTE: If days = 0, show all shows (no date filtering)
         
-        // Calculate pagination information
-        $total_items = count($cloudcasts_data['data']);
-        $pagination_info = $this->calculate_pagination($total_items, $page, $per_page);
+        // AIDEV-NOTE: Debug info displayed on page instead of log
+        if (isset($_GET['debug_mixcloud']) && $_GET['debug_mixcloud'] === '1') {
+            $debug_info = "<div style='background: #f0f0f0; padding: 10px; margin: 10px 0; border: 1px solid #ccc;'>";
+            $debug_info .= "<h4>Debug Info:</h4>";
+            $debug_info .= "<p><strong>Shows after API fetch:</strong> " . (isset($cloudcasts_data['data']) ? count($cloudcasts_data['data']) : 'No data') . "</p>";
+            $debug_info .= "<p><strong>Days parameter:</strong> " . $days . "</p>";
+            $debug_info .= "<p><strong>Start date:</strong> " . ($atts['start_date'] ?: 'None') . "</p>";
+            $debug_info .= "<p><strong>End date:</strong> " . ($atts['end_date'] ?: 'None') . "</p>";
+            $debug_info .= "<p><strong>Has custom dates:</strong> " . (!empty($atts['start_date']) || !empty($atts['end_date']) ? 'YES' : 'NO') . "</p>";
+            $debug_info .= "</div>";
+            
+            // We'll prepend this to the final output
+        }
         
-        // Apply pagination to cloudcasts data
-        $cloudcasts_data['data'] = $this->paginate_cloudcasts($cloudcasts_data['data'], $page, $per_page);
+        // AIDEV-NOTE: Removed pagination - now showing all cloudcasts
         
         // Generate HTML output with additional options
         $options = array(
             'lazy_load'        => ($atts['lazy_load'] === 'yes'),
             'mini_player'      => ($atts['mini_player'] === 'yes'),
             'show_date_filter' => ($atts['show_date_filter'] === 'yes'),
-            'show_pagination'  => ($atts['show_pagination'] === 'yes'),
             'show_social'      => ($atts['show_social'] === 'yes'),
             'account'          => $account,
             'current_start_date' => $atts['start_date'],
             'current_end_date'   => $atts['end_date'],
-            'pagination'       => $pagination_info,
-            'per_page'         => $per_page,
         );
         
-        return $this->generate_shortcode_html($cloudcasts_data, $account, $options);
+        $html_output = $this->generate_shortcode_html($cloudcasts_data, $account, $options);
+        
+        // AIDEV-NOTE: Prepend debug info if debugging is enabled
+        if (isset($_GET['debug_mixcloud']) && $_GET['debug_mixcloud'] === '1' && isset($debug_info)) {
+            $html_output = $debug_info . $html_output;
+        }
+        
+        return $html_output;
     }
     
     /**
@@ -524,48 +545,7 @@ class WP_Mixcloud_Archives {
         return $filtered;
     }
     
-    /**
-     * Calculate pagination information
-     *
-     * @param int $total_items Total number of items
-     * @param int $current_page Current page number
-     * @param int $per_page Items per page
-     * @return array Pagination information
-     */
-    private function calculate_pagination($total_items, $current_page, $per_page) {
-        $total_pages = max(1, ceil($total_items / $per_page));
-        $current_page = max(1, min($current_page, $total_pages));
-        
-        // Calculate start and end items for current page
-        $start_item = ($current_page - 1) * $per_page + 1;
-        $end_item = min($current_page * $per_page, $total_items);
-        
-        return array(
-            'total_items'  => $total_items,
-            'total_pages'  => $total_pages,
-            'current_page' => $current_page,
-            'per_page'     => $per_page,
-            'start_item'   => $start_item,
-            'end_item'     => $end_item,
-            'has_prev'     => $current_page > 1,
-            'has_next'     => $current_page < $total_pages,
-            'prev_page'    => max(1, $current_page - 1),
-            'next_page'    => min($total_pages, $current_page + 1),
-        );
-    }
     
-    /**
-     * Paginate cloudcasts array
-     *
-     * @param array $cloudcasts Array of cloudcast data
-     * @param int   $page       Current page number
-     * @param int   $per_page   Items per page
-     * @return array            Paginated cloudcasts
-     */
-    private function paginate_cloudcasts($cloudcasts, $page, $per_page) {
-        $offset = ($page - 1) * $per_page;
-        return array_slice($cloudcasts, $offset, $per_page);
-    }
     
     /**
      * Generate HTML output for shortcode
@@ -604,12 +584,6 @@ class WP_Mixcloud_Archives {
         $html .= '</div>';
         $html .= '</div>'; // .mixcloud-modal
         
-        // AIDEV-NOTE: Add pagination controls if enabled using compact style
-        if (!empty($options['show_pagination']) && !empty($options['pagination']) && $options['pagination']['total_pages'] > 1) {
-            $html .= '<div class="mixcloud-bottom-pagination">';
-            $html .= $this->generate_compact_pagination_html($options['pagination'], $options['account']);
-            $html .= '</div>';
-        }
         
         $html .= '</div>'; // .mixcloud-archives-container
         
@@ -739,89 +713,6 @@ class WP_Mixcloud_Archives {
         return $html;
     }
     
-    /**
-     * Generate compact pagination controls for header bar
-     *
-     * @param array  $pagination Pagination information
-     * @param string $account    Mixcloud account name
-     * @return string            Compact pagination HTML
-     */
-    private function generate_compact_pagination_html($pagination, $account) {
-        $html = '<div class="mixcloud-compact-pagination">';
-        
-        // Navigation buttons
-        $html .= '<div class="mixcloud-compact-pagination-nav">';
-        
-        // Previous button
-        if ($pagination['has_prev']) {
-            $html .= '<button type="button" class="mixcloud-compact-pagination-btn" ' .
-                     'data-page="' . esc_attr($pagination['prev_page']) . '" ' .
-                     'data-account="' . esc_attr($account) . '" ' .
-                     'aria-label="' . esc_attr__('Previous page', 'wp-mixcloud-archives') . '">';
-            $html .= '‹';
-            $html .= '</button>';
-        } else {
-            $html .= '<span class="mixcloud-compact-pagination-btn mixcloud-compact-pagination-disabled">';
-            $html .= '‹';
-            $html .= '</span>';
-        }
-        
-        // Current page indicator (show max 3 pages around current)
-        $current_page = $pagination['current_page'];
-        $total_pages = $pagination['total_pages'];
-        
-        // Show current page
-        $html .= '<span class="mixcloud-compact-pagination-btn mixcloud-compact-pagination-current">';
-        $html .= esc_html($current_page);
-        $html .= '</span>';
-        
-        // Show next page if available
-        if ($current_page < $total_pages) {
-            $next_page = $current_page + 1;
-            $html .= '<button type="button" class="mixcloud-compact-pagination-btn" ' .
-                     'data-page="' . esc_attr($next_page) . '" ' .
-                     'data-account="' . esc_attr($account) . '" ' .
-                     'aria-label="' . esc_attr(sprintf(__('Go to page %d', 'wp-mixcloud-archives'), $next_page)) . '">';
-            $html .= esc_html($next_page);
-            $html .= '</button>';
-        }
-        
-        // Show page after next if available
-        if ($current_page < $total_pages - 1) {
-            $next_next_page = $current_page + 2;
-            $html .= '<button type="button" class="mixcloud-compact-pagination-btn" ' .
-                     'data-page="' . esc_attr($next_next_page) . '" ' .
-                     'data-account="' . esc_attr($account) . '" ' .
-                     'aria-label="' . esc_attr(sprintf(__('Go to page %d', 'wp-mixcloud-archives'), $next_next_page)) . '">';
-            $html .= esc_html($next_next_page);
-            $html .= '</button>';
-        }
-        
-        // Next button
-        if ($pagination['has_next']) {
-            $html .= '<button type="button" class="mixcloud-compact-pagination-btn" ' .
-                     'data-page="' . esc_attr($pagination['next_page']) . '" ' .
-                     'data-account="' . esc_attr($account) . '" ' .
-                     'aria-label="' . esc_attr__('Next page', 'wp-mixcloud-archives') . '">';
-            $html .= '›';
-            $html .= '</button>';
-        } else {
-            $html .= '<span class="mixcloud-compact-pagination-btn mixcloud-compact-pagination-disabled">';
-            $html .= '›';
-            $html .= '</span>';
-        }
-        
-        $html .= '</div>'; // .mixcloud-compact-pagination-nav
-        
-        // Page info
-        $html .= '<div class="mixcloud-compact-pagination-info">';
-        $html .= esc_html(sprintf(__('Page %d/%d', 'wp-mixcloud-archives'), $current_page, $total_pages));
-        $html .= '</div>';
-        
-        $html .= '</div>'; // .mixcloud-compact-pagination
-        
-        return $html;
-    }
     
     
     /**
@@ -1254,159 +1145,6 @@ class WP_Mixcloud_Archives {
         ));
     }
     
-    /**
-     * AJAX handler for pagination
-     */
-    public function ajax_paginate() {
-        // AIDEV-NOTE: Enhanced nonce validation with isset check for security
-        // Verify nonce for security
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'wp-mixcloud-archives')) {
-            wp_die(__('Security check failed.', 'wp-mixcloud-archives'));
-        }
-        
-        // AIDEV-NOTE: Basic rate limiting to prevent AJAX abuse
-        $user_ip = $this->get_client_ip();
-        $rate_limit_key = 'mixcloud_ajax_limit_' . md5($user_ip);
-        $current_requests = get_transient($rate_limit_key);
-        
-        if ($current_requests && $current_requests >= 30) { // 30 requests per 5 minutes
-            wp_send_json_error(array(
-                'message' => __('Rate limit exceeded. Please wait before making more requests.', 'wp-mixcloud-archives')
-            ));
-        }
-        
-        // Increment request count
-        $current_requests = $current_requests ? $current_requests + 1 : 1;
-        set_transient($rate_limit_key, $current_requests, 300); // 5 minutes
-        
-        // Get parameters from AJAX request
-        $account = sanitize_text_field($_POST['account']);
-        $page = max(1, absint($_POST['page']));
-        $per_page = isset($_POST['per_page']) ? absint($_POST['per_page']) : 10;
-        $start_date = sanitize_text_field($_POST['start_date']);
-        $end_date = sanitize_text_field($_POST['end_date']);
-        
-        // AIDEV-NOTE: Validate date format (YYYY-MM-DD) for enhanced security
-        if (!empty($start_date) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $start_date)) {
-            wp_send_json_error(array(
-                'message' => __('Invalid start date format. Use YYYY-MM-DD.', 'wp-mixcloud-archives')
-            ));
-        }
-        if (!empty($end_date) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end_date)) {
-            wp_send_json_error(array(
-                'message' => __('Invalid end date format. Use YYYY-MM-DD.', 'wp-mixcloud-archives')
-            ));
-        }
-        $limit = isset($_POST['limit']) ? absint($_POST['limit']) : 100;
-        $lazy_load = isset($_POST['lazy_load']) ? ($_POST['lazy_load'] === 'true') : true;
-        $mini_player = isset($_POST['mini_player']) ? ($_POST['mini_player'] === 'true') : true;
-        
-        // Validate account parameter
-        if (empty($account)) {
-            wp_send_json_error(array(
-                'message' => __('Account parameter is required.', 'wp-mixcloud-archives')
-            ));
-        }
-        
-        // AIDEV-NOTE: Validate account name follows Mixcloud username rules (alphanumeric, underscore, hyphen)
-        if (!preg_match('/^[a-zA-Z0-9_-]+$/', $account)) {
-            wp_send_json_error(array(
-                'message' => __('Invalid account name. Only letters, numbers, underscores, and hyphens are allowed.', 'wp-mixcloud-archives')
-            ));
-        }
-        
-        // Set reasonable limits
-        $per_page = max(1, min($per_page, 50));
-        $limit = max(1, min($limit, 100));
-        
-        // Get cloudcasts from API with enhanced caching
-        $cache_args = array(
-            'limit'    => $limit,
-            'metadata' => true,
-        );
-        
-        // Try multi-tier cache first
-        $cloudcasts_data = $this->get_cached_cloudcasts($account, $cache_args);
-        
-        if (false === $cloudcasts_data) {
-            $cloudcasts_data = $this->get_api_handler()->get_user_cloudcasts($account, $cache_args);
-            
-            // Store in multi-tier cache if successful
-            if (!is_wp_error($cloudcasts_data)) {
-                $this->set_cached_cloudcasts($account, $cache_args, $cloudcasts_data);
-            }
-        }
-        
-        // Handle API errors with user-friendly messages
-        if (is_wp_error($cloudcasts_data)) {
-            $error_html = $this->generate_user_friendly_error($cloudcasts_data, 'ajax');
-            wp_send_json_error(array(
-                'message' => strip_tags($cloudcasts_data->get_error_message()),
-                'html' => $error_html,
-                'error_code' => $cloudcasts_data->get_error_code()
-            ));
-        }
-        
-        // Filter cloudcasts by custom date range if provided
-        if (!empty($start_date) || !empty($end_date)) {
-            $cloudcasts_data['data'] = $this->filter_cloudcasts_by_custom_dates(
-                $cloudcasts_data['data'], 
-                $start_date, 
-                $end_date
-            );
-        }
-        
-        // Calculate pagination information
-        $total_items = count($cloudcasts_data['data']);
-        $pagination_info = $this->calculate_pagination($total_items, $page, $per_page);
-        
-        // Apply pagination to cloudcasts data
-        $paginated_data = $this->paginate_cloudcasts($cloudcasts_data['data'], $page, $per_page);
-        
-        // Prepare options for HTML generation
-        $options = array(
-            'lazy_load'   => $lazy_load,
-            'mini_player' => $mini_player,
-            'show_date_filter' => false, // Don't include filter in AJAX response
-            'show_pagination' => false,  // Don't include pagination in table response
-            'show_social' => true, // Include social sharing buttons
-        );
-        
-        // Generate table content and pagination HTML separately
-        if (empty($paginated_data)) {
-            $table_html = '<tr><td colspan="6" class="mixcloud-archives-empty-row">' . 
-                         esc_html(__('No cloudcasts found on this page.', 'wp-mixcloud-archives')) . 
-                         '</td></tr>';
-        } else {
-            $table_html = '';
-            foreach ($paginated_data as $cloudcast) {
-                $table_html .= $this->generate_cloudcast_html($cloudcast, $options);
-            }
-        }
-        
-        // Generate compact pagination HTML
-        $pagination_html = '';
-        if ($pagination_info['total_pages'] > 1) {
-            $pagination_html = '<div class="mixcloud-bottom-pagination">';
-            $pagination_html .= $this->generate_compact_pagination_html($pagination_info, $account);
-            $pagination_html .= '</div>';
-        }
-        
-        // Send successful response
-        wp_send_json_success(array(
-            'table_html' => $table_html,
-            'list_html' => $table_html, // AIDEV-NOTE: JavaScript expects list_html property
-            'pagination_html' => $pagination_html,
-            'compact_pagination_html' => $pagination_html, // AIDEV-NOTE: JavaScript expects compact_pagination_html property
-            'pagination_info' => $pagination_info,
-            'count' => count($paginated_data),
-            'message' => sprintf(
-                __('Showing page %d of %d', 'wp-mixcloud-archives'),
-                $pagination_info['current_page'],
-                $pagination_info['total_pages']
-            )
-        ));
-    }
     
     /**
      * Generate user-friendly error message based on error type

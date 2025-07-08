@@ -90,8 +90,10 @@ class Mixcloud_API_Handler {
         );
         $args = wp_parse_args($args, $defaults);
         
-        // AIDEV-NOTE: Validate limit to prevent excessive API calls
-        $args['limit'] = min(absint($args['limit']), self::MAX_CLOUDCASTS_LIMIT);
+        // AIDEV-NOTE: Allow unlimited fetching when limit is 0, otherwise validate limit
+        if ($args['limit'] > 0) {
+            $args['limit'] = min(absint($args['limit']), self::MAX_CLOUDCASTS_LIMIT);
+        }
         $args['offset'] = absint($args['offset']);
         
         // Check circuit breaker first
@@ -106,6 +108,11 @@ class Mixcloud_API_Handler {
         
         if (false !== $cached_data) {
             return $cached_data;
+        }
+        
+        // AIDEV-NOTE: Handle unlimited fetching by paginating through all results
+        if ($args['limit'] == 0) {
+            return $this->get_all_user_cloudcasts($username, $args, $cache_key);
         }
         
         // Build API URL
@@ -129,6 +136,85 @@ class Mixcloud_API_Handler {
         set_transient($cache_key, $formatted_data, self::CACHE_EXPIRATION);
         
         return $formatted_data;
+    }
+    
+    /**
+     * Get all user cloudcasts by fetching all pages
+     *
+     * @param string $username Mixcloud username
+     * @param array  $args     Arguments (offset, metadata)
+     * @param string $cache_key Cache key for storing results
+     * @return array|WP_Error  Array of all cloudcasts or WP_Error on failure
+     */
+    private function get_all_user_cloudcasts($username, $args, $cache_key) {
+        $all_cloudcasts = array();
+        $paging_info = array();
+        $offset = $args['offset'];
+        $page_size = 50; // Use max page size for efficiency
+        $max_requests = 20; // Prevent infinite loops (max 1000 shows)
+        $request_count = 0;
+        
+        do {
+            // Set current page arguments
+            $page_args = $args;
+            $page_args['limit'] = $page_size;
+            $page_args['offset'] = $offset;
+            
+            // Build API URL for this page
+            $api_url = $this->build_api_url($username, 'cloudcasts', $page_args);
+            
+            // Make API request
+            $response = $this->make_api_request($api_url);
+            
+            if (is_wp_error($response)) {
+                return $response;
+            }
+            
+            // Parse and format response data
+            $formatted_data = $this->format_cloudcasts_response($response);
+            
+            if (is_wp_error($formatted_data)) {
+                return $formatted_data;
+            }
+            
+            // Append cloudcasts to our collection
+            if (!empty($formatted_data['data'])) {
+                $all_cloudcasts = array_merge($all_cloudcasts, $formatted_data['data']);
+            }
+            
+            // Update paging info
+            $paging_info = $formatted_data['paging'];
+            
+            // Calculate next offset
+            $offset += $page_size;
+            $request_count++;
+            
+            // AIDEV-NOTE: Debug logging for pagination
+        if (isset($_GET['debug_mixcloud']) && $_GET['debug_mixcloud'] === '1') {
+            error_log("Mixcloud Debug: Page $request_count - Fetched " . count($formatted_data['data']) . " shows, Total so far: " . count($all_cloudcasts));
+            error_log("Mixcloud Debug: Has next page: " . (!empty($paging_info['next']) ? 'YES' : 'NO'));
+        }
+        
+        // Continue if there are more results and we haven't hit our safety limit
+        } while (!empty($paging_info['next']) && $request_count < $max_requests);
+        
+        // Prepare final result
+        $result = array(
+            'data'       => $all_cloudcasts,
+            'paging'     => $paging_info,
+            'total'      => count($all_cloudcasts),
+            'fetched_at' => current_time('mysql'),
+        );
+        
+        // AIDEV-NOTE: Final debug log
+        if (isset($_GET['debug_mixcloud']) && $_GET['debug_mixcloud'] === '1') {
+            error_log("Mixcloud Debug: FINAL RESULT - Total shows: " . count($all_cloudcasts) . " in $request_count requests");
+        }
+        
+        // Cache the complete result
+        set_transient($cache_key, $result, self::CACHE_EXPIRATION);
+        
+        return $result;
     }
     
     /**
@@ -195,7 +281,7 @@ class Mixcloud_API_Handler {
             $query_params['metadata'] = '1';
         }
         
-        // Add limit parameter
+        // Add limit parameter (skip if limit is 0 to fetch all)
         if (!empty($args['limit'])) {
             $query_params['limit'] = $args['limit'];
         }
