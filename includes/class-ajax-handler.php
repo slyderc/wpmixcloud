@@ -48,46 +48,9 @@ class WP_Mixcloud_Archives_AJAX_Handler {
      * Initialize WordPress hooks
      */
     private function init_hooks() {
-        // Register AJAX handlers for date filtering
-        add_action('wp_ajax_mixcloud_filter_by_date', array($this, 'ajax_filter_by_date'));
-        add_action('wp_ajax_nopriv_mixcloud_filter_by_date', array($this, 'ajax_filter_by_date'));
+        // AIDEV-NOTE: AJAX handlers removed - date filtering functionality not implemented
     }
     
-    /**
-     * AJAX handler for date filtering
-     */
-    public function ajax_filter_by_date() {
-        // Verify nonce for security
-        if (!$this->verify_ajax_nonce()) {
-            wp_die(__('Security check failed.', 'wp-mixcloud-archives'));
-        }
-        
-        // Check rate limiting
-        if (!$this->check_rate_limit()) {
-            wp_send_json_error(array(
-                'message' => __('Rate limit exceeded. Please wait before making more requests.', 'wp-mixcloud-archives')
-            ));
-        }
-        
-        // Get and validate request parameters
-        $params = $this->get_validated_request_params();
-        if (is_wp_error($params)) {
-            wp_send_json_error(array(
-                'message' => $params->get_error_message()
-            ));
-        }
-        
-        // Fetch and filter cloudcasts data
-        $cloudcasts_data = $this->fetch_filtered_cloudcasts($params);
-        
-        // Handle API errors
-        if (is_wp_error($cloudcasts_data)) {
-            $this->send_ajax_error_response($cloudcasts_data);
-        }
-        
-        // Generate and send successful response
-        $this->send_ajax_success_response($cloudcasts_data, $params);
-    }
     
     /**
      * Verify AJAX nonce
@@ -307,7 +270,7 @@ class WP_Mixcloud_Archives_AJAX_Handler {
         $options = array(
             'lazy_load'   => $params['lazy_load'],
             'mini_player' => $params['mini_player'],
-            'show_date_filter' => false, // Don't include filter in AJAX response
+            // No additional options needed for AJAX response
             'show_social' => true, // Include social sharing buttons
             'account' => $params['account'],
         );

@@ -1,33 +1,48 @@
 /**
- * WP Mixcloud Archives - Frontend Scripts
+ * WP Mixcloud Archives - Frontend Scripts (Production Fix)
  *
  * @package WPMixcloudArchives
  */
 
-(function() {
+(function($) {
     'use strict';
+    
+    // AIDEV-NOTE: Namespace all jQuery operations for theme compatibility
+    var $ = window.jQuery || window.$;
+    if (!$) {
+        console.error('WP Mixcloud Archives: jQuery not found');
+        return;
+    }
+
+    // Store current player reference globally within plugin scope
+    var currentlyPlaying = null;
 
     /**
      * Initialize Mixcloud inline player functionality
      */
     function initMixcloudPlayers() {
-        const playButtons = document.querySelectorAll('.mixcloud-play-button');
-        let currentlyPlaying = null;
+        // AIDEV-NOTE: Use event delegation for dynamic content and theme compatibility
+        // Remove any existing handlers to prevent duplicates
+        $(document).off('click.wpmixcloud', '.mixcloud-play-button');
         
-        // Add click handlers to play buttons
-        playButtons.forEach(function(button) {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const listItem = button.closest('.mixcloud-list-item');
-                const waveformContainer = listItem.querySelector('.mixcloud-list-waveform');
-                const cloudcastUrl = button.getAttribute('data-cloudcast-url');
-                const cloudcastName = button.getAttribute('data-cloudcast-name');
-                const cloudcastKey = button.getAttribute('data-cloudcast-key');
-                
-                if (waveformContainer && cloudcastUrl && cloudcastKey) {
-                    toggleInlinePlayer(listItem, waveformContainer, cloudcastUrl, cloudcastName, cloudcastKey);
-                }
-            });
+        // Attach new handler with namespace
+        $(document).on('click.wpmixcloud', '.mixcloud-play-button', function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // AIDEV-NOTE: Prevent theme event conflicts
+            e.stopImmediatePropagation(); // AIDEV-NOTE: Stop all other handlers
+            
+            const button = this;
+            const $listItem = $(button).closest('.mixcloud-list-item');
+            const $waveformContainer = $listItem.find('.mixcloud-list-waveform').first();
+            const cloudcastUrl = $(button).attr('data-cloudcast-url');
+            const cloudcastName = $(button).attr('data-cloudcast-name');
+            const cloudcastKey = $(button).attr('data-cloudcast-key');
+            
+            if ($waveformContainer.length && cloudcastUrl && cloudcastKey) {
+                toggleInlinePlayer($listItem[0], $waveformContainer[0], cloudcastUrl, cloudcastName, cloudcastKey);
+            }
+            
+            return false; // Extra safety
         });
         
         // Function to toggle inline player
@@ -122,200 +137,151 @@
     }
 
     /**
-     * Initialize filter functionality
+     * Initialize filter functionality with better event handling
      */
     function initFilters() {
-        const customDropdowns = document.querySelectorAll('.mixcloud-custom-dropdown');
+        // AIDEV-NOTE: Use event delegation for dropdown handling
+        $(document).off('click.wpmixcloud-dropdown');
         
-        customDropdowns.forEach(dropdown => {
-            const selected = dropdown.querySelector('.mixcloud-dropdown-selected');
-            const options = dropdown.querySelector('.mixcloud-dropdown-options');
-            const optionItems = dropdown.querySelectorAll('.mixcloud-dropdown-option');
-            const text = dropdown.querySelector('.mixcloud-dropdown-text');
+        // Handle dropdown toggle clicks
+        $(document).on('click.wpmixcloud-dropdown', '.mixcloud-dropdown-selected', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
             
-            if (!selected || !options || !text) return;
+            const $dropdown = $(this).closest('.mixcloud-custom-dropdown');
+            const $selected = $(this);
+            const $options = $dropdown.find('.mixcloud-dropdown-options');
+            const isOpen = $selected.attr('aria-expanded') === 'true';
             
-            // Toggle dropdown open/close
-            function toggleDropdown() {
-                const isOpen = selected.getAttribute('aria-expanded') === 'true';
-                
-                if (isOpen) {
-                    closeDropdown();
-                } else {
-                    openDropdown();
-                }
+            if (isOpen) {
+                closeDropdown($selected, $options);
+            } else {
+                openDropdown($selected, $options);
             }
             
-            function openDropdown() {
-                selected.setAttribute('aria-expanded', 'true');
-                options.classList.add('mixcloud-dropdown-open');
-                
-                // Focus first option
-                const firstOption = options.querySelector('.mixcloud-dropdown-option');
-                if (firstOption) {
-                    firstOption.focus();
-                }
-                
-                // Close on outside click
-                setTimeout(() => {
-                    document.addEventListener('click', outsideClickHandler);
-                }, 0);
-            }
+            return false;
+        });
+        
+        // Handle option clicks
+        $(document).on('click.wpmixcloud-dropdown', '.mixcloud-dropdown-option', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
             
-            function closeDropdown() {
-                selected.setAttribute('aria-expanded', 'false');
-                options.classList.remove('mixcloud-dropdown-open');
-                document.removeEventListener('click', outsideClickHandler);
-                selected.focus();
-            }
+            const $option = $(this);
+            const $dropdown = $option.closest('.mixcloud-custom-dropdown');
+            const $selected = $dropdown.find('.mixcloud-dropdown-selected');
+            const $options = $dropdown.find('.mixcloud-dropdown-options');
+            const $text = $dropdown.find('.mixcloud-dropdown-text');
             
-            function outsideClickHandler(e) {
-                if (!dropdown.contains(e.target)) {
-                    closeDropdown();
-                }
-            }
+            selectOption($option, $dropdown, $selected, $options, $text);
             
-            function selectOption(option) {
-                const value = option.getAttribute('data-value');
-                const optionText = option.textContent;
-                
-                // Update selected display
-                text.textContent = optionText;
-                
-                // Update active state
-                optionItems.forEach(opt => {
-                    opt.classList.remove('mixcloud-dropdown-option-active');
-                    opt.setAttribute('aria-selected', 'false');
+            return false;
+        });
+        
+        // Close dropdowns on outside click
+        $(document).on('click.wpmixcloud-outside', function(e) {
+            if (!$(e.target).closest('.mixcloud-custom-dropdown').length) {
+                $('.mixcloud-dropdown-selected[aria-expanded="true"]').each(function() {
+                    const $selected = $(this);
+                    const $options = $selected.siblings('.mixcloud-dropdown-options');
+                    closeDropdown($selected, $options);
                 });
-                option.classList.add('mixcloud-dropdown-option-active');
-                option.setAttribute('aria-selected', 'true');
-                
-                // Update data attribute
-                dropdown.setAttribute('data-current-filter', value);
-                
-                // Apply filter
-                applyFilter(value);
-                
-                // Close dropdown
-                closeDropdown();
             }
+        });
+        
+        function openDropdown($selected, $options) {
+            $selected.attr('aria-expanded', 'true');
+            $options.addClass('mixcloud-dropdown-open');
             
-            function applyFilter(filter) {
-                const listItems = document.querySelectorAll('.mixcloud-list-item');
-                let matchCount = 0;
+            // Focus first option
+            const $firstOption = $options.find('.mixcloud-dropdown-option').first();
+            if ($firstOption.length) {
+                $firstOption.focus();
+            }
+        }
+        
+        function closeDropdown($selected, $options) {
+            $selected.attr('aria-expanded', 'false');
+            $options.removeClass('mixcloud-dropdown-open');
+            $selected.focus();
+        }
+        
+        function selectOption($option, $dropdown, $selected, $options, $text) {
+            const value = $option.attr('data-value');
+            const optionText = $option.text();
+            
+            // Update selected display
+            $text.text(optionText);
+            
+            // Update active state
+            $dropdown.find('.mixcloud-dropdown-option').removeClass('mixcloud-dropdown-option-active').attr('aria-selected', 'false');
+            $option.addClass('mixcloud-dropdown-option-active').attr('aria-selected', 'true');
+            
+            // Update data attribute
+            $dropdown.attr('data-current-filter', value);
+            
+            // Apply filter
+            applyFilter(value);
+            
+            // Close dropdown
+            closeDropdown($selected, $options);
+        }
+        
+        function applyFilter(filter) {
+            const listItems = document.querySelectorAll('.mixcloud-list-item');
+            let matchCount = 0;
+            
+            listItems.forEach(item => {
+                const title = item.querySelector('.mixcloud-list-title').textContent;
                 
-                listItems.forEach(item => {
-                    const title = item.querySelector('.mixcloud-list-title').textContent;
+                // RIGHT-TO-LEFT APPROACH: Work backwards from the end to find dates
+                // Match the PHP implementation
+                let cleanTitle = title;
+                const separators = ['•', '–', '-', '|', ':'];
+                let dateRemoved = false;
+                
+                for (const sep of separators) {
+                    if (dateRemoved) break;
                     
-                    // RIGHT-TO-LEFT APPROACH: Work backwards from the end to find dates
-                    // Match the PHP implementation
-                    let cleanTitle = title;
-                    const separators = ['•', '–', '-', '|', ':'];
-                    let dateRemoved = false;
-                    
-                    for (const sep of separators) {
-                        if (dateRemoved) break;
+                    const lastPos = cleanTitle.lastIndexOf(sep);
+                    if (lastPos !== -1) {
+                        const beforeSep = cleanTitle.substring(0, lastPos).trim();
+                        const afterSep = cleanTitle.substring(lastPos + sep.length).trim();
                         
-                        const lastPos = cleanTitle.lastIndexOf(sep);
-                        if (lastPos !== -1) {
-                            const beforeSep = cleanTitle.substring(0, lastPos).trim();
-                            const afterSep = cleanTitle.substring(lastPos + sep.length).trim();
-                            
-                            // Check if what's after the separator looks like a date
-                            const datePatterns = [
-                                /^(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])-(20\d{2}|19\d{2})$/,  // MM-DD-YYYY
-                                /^\d{1,2}\/\d{1,2}\/\d{2,4}$/,                                        // M/D/YY
-                                /^\d{4}-\d{1,2}-\d{1,2}$/,                                           // YYYY-MM-DD
-                                /^\d{1,2}\.\d{1,2}\.\d{2,4}$/,                                       // M.D.YY
-                                /^(0?[1-9]|1[0-2])–(0?[1-9]|[12][0-9]|3[01])-(20\d{2}|19\d{2})$/,  // MM–DD-YYYY
-                                /^(20\d{2}|19\d{2})$/                                                // Just year
-                            ];
-                            
-                            for (const pattern of datePatterns) {
-                                if (pattern.test(afterSep)) {
-                                    cleanTitle = beforeSep;
-                                    dateRemoved = true;
-                                    break;
-                                }
+                        // Check if what's after the separator looks like a date
+                        const datePatterns = [
+                            /^(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])-(20\d{2}|19\d{2})$/,  // MM-DD-YYYY
+                            /^\d{1,2}\/\d{1,2}\/\d{2,4}$/,                                        // M/D/YY
+                            /^\d{4}-\d{1,2}-\d{1,2}$/,                                           // YYYY-MM-DD
+                            /^\d{1,2}\.\d{1,2}\.\d{2,4}$/,                                       // M.D.YY
+                            /^(0?[1-9]|1[0-2])–(0?[1-9]|[12][0-9]|3[01])-(20\d{2}|19\d{2})$/,  // MM–DD-YYYY
+                            /^(20\d{2}|19\d{2})$/                                                // Just year
+                        ];
+                        
+                        for (const pattern of datePatterns) {
+                            if (pattern.test(afterSep)) {
+                                cleanTitle = beforeSep;
+                                dateRemoved = true;
+                                break;
                             }
                         }
                     }
-                    
-                    // Normalize characters for consistent filtering - convert en dash and bullet to regular dash
-                    cleanTitle = cleanTitle.replace(/[–•]/g, '-');
-                    
-                    if (filter === 'all' || cleanTitle === filter) {
-                        item.style.display = 'flex';
-                        matchCount++;
-                    } else {
-                        item.style.display = 'none';
-                    }
-                });
-            }
-            
-            // Click events
-            selected.addEventListener('click', toggleDropdown);
-            
-            optionItems.forEach(option => {
-                option.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    selectOption(option);
-                });
-            });
-            
-            // Keyboard navigation
-            selected.addEventListener('keydown', (e) => {
-                switch (e.key) {
-                    case 'Enter':
-                    case ' ':
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        openDropdown();
-                        break;
-                    case 'Escape':
-                        closeDropdown();
-                        break;
                 }
-            });
-            
-            options.addEventListener('keydown', (e) => {
-                const focusedOption = document.activeElement;
-                const currentIndex = Array.from(optionItems).indexOf(focusedOption);
                 
-                switch (e.key) {
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        if (currentIndex < optionItems.length - 1) {
-                            optionItems[currentIndex + 1].focus();
-                        }
-                        break;
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        if (currentIndex > 0) {
-                            optionItems[currentIndex - 1].focus();
-                        }
-                        break;
-                    case 'Enter':
-                    case ' ':
-                        e.preventDefault();
-                        if (focusedOption && focusedOption.classList.contains('mixcloud-dropdown-option')) {
-                            selectOption(focusedOption);
-                        }
-                        break;
-                    case 'Escape':
-                        e.preventDefault();
-                        closeDropdown();
-                        break;
+                // Normalize characters for consistent filtering - convert en dash and bullet to regular dash
+                cleanTitle = cleanTitle.replace(/[–•]/g, '-');
+                
+                if (filter === 'all' || cleanTitle === filter) {
+                    item.style.display = 'flex';
+                    matchCount++;
+                } else {
+                    item.style.display = 'none';
                 }
             });
-            
-            // Make options focusable
-            optionItems.forEach(option => {
-                option.setAttribute('tabindex', '-1');
-            });
-        });
+        }
     }
-
 
     /**
      * Handle table responsiveness
@@ -460,67 +426,6 @@
         wrapper.appendChild(placeholder);
     }
 
-    /**
-     * Initialize date filtering functionality
-     */
-    function initDateFiltering() {
-        const dateFilters = document.querySelectorAll('.mixcloud-date-filter');
-        
-        dateFilters.forEach(function(filter) {
-            const applyBtn = filter.querySelector('.mixcloud-date-apply');
-            const clearBtn = filter.querySelector('.mixcloud-date-clear');
-            const startDateInput = filter.querySelector('.mixcloud-start-date');
-            const endDateInput = filter.querySelector('.mixcloud-end-date');
-            
-            if (!applyBtn || !clearBtn || !startDateInput || !endDateInput) {
-                return;
-            }
-            
-            // Apply filter button
-            applyBtn.addEventListener('click', function() {
-                const account = this.getAttribute('data-account');
-                const startDate = startDateInput.value;
-                const endDate = endDateInput.value;
-                
-                // Validate date range
-                if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-                    alert(wpMixcloudArchives.invalidDateRangeText || 'End date must be after start date.');
-                    return;
-                }
-                
-                applyDateFilter(account, startDate, endDate);
-            });
-            
-            // Clear filter button
-            clearBtn.addEventListener('click', function() {
-                const account = this.getAttribute('data-account');
-                startDateInput.value = '';
-                endDateInput.value = '';
-                applyDateFilter(account, '', '');
-            });
-            
-            // Auto-apply on date change (with debounce)
-            let dateChangeTimeout;
-            function handleDateChange() {
-                clearTimeout(dateChangeTimeout);
-                dateChangeTimeout = setTimeout(function() {
-                    const account = startDateInput.getAttribute('data-account');
-                    const startDate = startDateInput.value;
-                    const endDate = endDateInput.value;
-                    
-                    // Only auto-apply if both dates are set
-                    if (startDate && endDate) {
-                        if (new Date(startDate) <= new Date(endDate)) {
-                            applyDateFilter(account, startDate, endDate);
-                        }
-                    }
-                }, 500);
-            }
-            
-            startDateInput.addEventListener('change', handleDateChange);
-            endDateInput.addEventListener('change', handleDateChange);
-        });
-    }
     
     /**
      * Request cache for deduplication
@@ -670,130 +575,6 @@
             tryRequest();
         });
     }
-    
-    /**
-     * Apply date filter via AJAX with enhanced error handling and deduplication
-     * 
-     * @param {string} account Account name
-     * @param {string} startDate Start date (YYYY-MM-DD)
-     * @param {string} endDate End date (YYYY-MM-DD)
-     */
-    function applyDateFilter(account, startDate, endDate) {
-        const container = document.querySelector('.mixcloud-archives-container[data-account="' + account + '"]');
-        const table = container ? container.querySelector('.mixcloud-archives-table tbody') : null;
-        const applyBtn = container ? container.querySelector('.mixcloud-date-apply') : null;
-        
-        if (!container || !table || !applyBtn) {
-            return;
-        }
-        
-        // Create request key for deduplication
-        const requestKey = `filter_${account}_${startDate}_${endDate}`;
-        
-        // Check if identical request is already in progress
-        if (activeRequests.has(requestKey)) {
-            return;
-        }
-        
-        // Show loading state
-        applyBtn.disabled = true;
-        applyBtn.innerHTML = '<span class="mixcloud-loading-spinner"></span>' + 
-                           (wpMixcloudArchives.filteringText || 'Filtering...');
-        
-        // Add loading class to table
-        table.classList.add('mixcloud-table-loading');
-        
-        // Prepare AJAX data
-        const ajaxData = {
-            action: 'mixcloud_filter_by_date',
-            nonce: wpMixcloudArchives.nonce,
-            account: account,
-            start_date: startDate,
-            end_date: endDate,
-            limit: 20, // Could be made configurable
-            lazy_load: 'true',
-            mini_player: 'true'
-        };
-        
-        // Track active request
-        const abortController = new AbortController();
-        activeRequests.set(requestKey, abortController);
-        
-        // Make AJAX request with timeout and retry logic
-        makeAjaxRequest(wpMixcloudArchives.ajaxUrl, ajaxData, {
-            signal: abortController.signal,
-            timeout: 10000, // 10 second timeout
-            retries: 2
-        })
-        .then(data => {
-            if (data.success) {
-                // Update table content
-                table.innerHTML = data.data.html;
-                
-                // Re-initialize functionality for new content
-                initMixcloudPlayers();
-                initLazyLoadingImages();
-                handleArtworkErrors();
-                initPlayCountAnimations();
-                initFilters();
-                
-                // Show success message (optional)
-                showFilterMessage(container, data.data.message, 'success');
-            } else {
-                // Show error message
-                showFilterMessage(container, data.data.message || 'An error occurred while filtering.', 'error');
-            }
-        })
-        .catch(error => {
-            if (error.name !== 'AbortError') {
-                const errorMessage = error.message || wpMixcloudArchives.filterErrorText || 'Failed to filter results. Please try again.';
-                showFilterMessage(container, errorMessage, 'error');
-            }
-        })
-        .finally(() => {
-            // Clean up
-            activeRequests.delete(requestKey);
-            
-            // Reset button state
-            applyBtn.disabled = false;
-            applyBtn.innerHTML = wpMixcloudArchives.applyFilterText || 'Apply Filter';
-            table.classList.remove('mixcloud-table-loading');
-        });
-    }
-    
-    /**
-     * Show filter message
-     * 
-     * @param {Element} container Container element
-     * @param {string} message Message text
-     * @param {string} type Message type (success, error)
-     */
-    function showFilterMessage(container, message, type) {
-        // Remove existing messages
-        const existingMessages = container.querySelectorAll('.mixcloud-filter-message');
-        existingMessages.forEach(msg => msg.remove());
-        
-        // Create message element
-        const messageEl = document.createElement('div');
-        messageEl.className = 'mixcloud-filter-message mixcloud-filter-message-' + type;
-        messageEl.innerHTML = message;
-        
-        // Insert after date filter
-        const dateFilter = container.querySelector('.mixcloud-date-filter');
-        if (dateFilter) {
-            dateFilter.parentNode.insertBefore(messageEl, dateFilter.nextSibling);
-        } else {
-            container.insertBefore(messageEl, container.firstChild);
-        }
-        
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            if (messageEl.parentNode) {
-                messageEl.remove();
-            }
-        }, 5000);
-    }
-    
     
     
     
@@ -977,23 +758,21 @@
         initLazyLoadingImages();
         initPlayCountAnimations();
         handleArtworkErrors();
-        initDateFiltering();
         initSocialSharing();
     }
 
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+    // AIDEV-NOTE: Use jQuery document ready for theme compatibility
+    $(document).ready(function() {
+        // Small delay to ensure theme scripts have initialized
+        setTimeout(init, 100);
+    });
 
     // Re-initialize on AJAX content updates (for compatibility with page builders)
-    document.addEventListener('wp-mixcloud-archives-refresh', init);
+    $(document).on('wp-mixcloud-archives-refresh', init);
 
-})();
+})(window.jQuery);
 
 // Expose refresh function for external use
 window.wpMixcloudArchivesRefresh = function() {
-    document.dispatchEvent(new Event('wp-mixcloud-archives-refresh'));
+    jQuery(document).trigger('wp-mixcloud-archives-refresh');
 };

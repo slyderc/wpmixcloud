@@ -42,16 +42,17 @@ No automated tests - uses comprehensive manual testing checklist in `tests/manua
 
 ### Shortcode Usage
 ```
-[mixcloud_archives account="NowWaveRadio" limit="20" per_page="5" days="7"]
+[mixcloud_archives account="NowWaveRadio" days="7" mini_player="yes"]
 ```
 
 **Key Parameters:**
 - `account` (required): Mixcloud username
-- `limit`: Max cloudcasts (1-100, default: 10)
-- `per_page`: Items per page (1-50, default: 10)
-- `days`: Show last N days (1-365, default: 30)
-- `mini_player`: Compact players (yes/no)
-- `show_social`: Social sharing buttons (yes/no)
+- `days`: Show last N days (0-365, default: 0 = show all)
+- `start_date`: Show from date (YYYY-MM-DD, optional)
+- `end_date`: Show until date (YYYY-MM-DD, optional)
+- `mini_player`: Compact players (yes/no, default: yes)
+- `lazy_load`: Enable image lazy loading (yes/no, default: yes)
+- `show_social`: Social sharing buttons (yes/no, default: yes)
 
 ## Security & Performance
 

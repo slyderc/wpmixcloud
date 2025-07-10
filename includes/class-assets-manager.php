@@ -71,7 +71,7 @@ class WP_Mixcloud_Archives_Assets_Manager {
         wp_enqueue_script(
             'wp-mixcloud-archives-script',
             WP_MIXCLOUD_ARCHIVES_PLUGIN_URL . 'assets/js/script' . $min_suffix . '.js',
-            array(),
+            array('jquery'), // Add jQuery dependency for theme compatibility
             WP_MIXCLOUD_ARCHIVES_VERSION,
             true // Load in footer
         );

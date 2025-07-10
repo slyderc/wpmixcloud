@@ -281,7 +281,7 @@ class WP_Mixcloud_Archives_Admin {
      */
     public function render_clear_cache_field() {
         echo '<button type="button" id="wp-mixcloud-clear-cache" class="button button-secondary">' . esc_html__('Clear All Cache', 'wp-mixcloud-archives') . '</button>';
-        echo '<span id="wp-mixcloud-clear-cache-status" style="margin-left: 10px;"></span>';
+        echo '<span id="wp-mixcloud-clear-cache-status" class="wp-mixcloud-admin-cache-status"></span>';
         echo '<p class="description">' . esc_html__('Clear all cached Mixcloud data. Use this if you\'re not seeing recent updates or experiencing display issues.', 'wp-mixcloud-archives') . '</p>';
     }
     
@@ -365,39 +365,34 @@ class WP_Mixcloud_Archives_Admin {
                 <code>[mixcloud_archives account="your-username"]</code>
                 
                 <h3><?php esc_html_e('Available Parameters', 'wp-mixcloud-archives'); ?></h3>
-                <div style="margin: 15px 0;">
+                <div class="wp-mixcloud-admin-help-section">
                     <h4><?php esc_html_e('Required', 'wp-mixcloud-archives'); ?></h4>
-                    <ul style="margin-left: 20px;">
+                    <ul class="wp-mixcloud-admin-help-list">
                         <li><strong>account</strong> - <?php esc_html_e('Mixcloud username (required)', 'wp-mixcloud-archives'); ?></li>
                     </ul>
                     
                     <h4><?php esc_html_e('Display Options', 'wp-mixcloud-archives'); ?></h4>
-                    <ul style="margin-left: 20px;">
-                        <li><strong>limit</strong> - <?php esc_html_e('Number of shows to fetch (1-100, default: 10)', 'wp-mixcloud-archives'); ?></li>
-                        <li><strong>days</strong> - <?php esc_html_e('Show archives from last X days (1-365, default: 30)', 'wp-mixcloud-archives'); ?></li>
-                        <li><strong>start_date</strong> - <?php esc_html_e('Show archives from date (YYYY-MM-DD)', 'wp-mixcloud-archives'); ?></li>
-                        <li><strong>end_date</strong> - <?php esc_html_e('Show archives until date (YYYY-MM-DD)', 'wp-mixcloud-archives'); ?></li>
-                        <li><strong>per_page</strong> - <?php esc_html_e('Items per page (1-50, default: 10)', 'wp-mixcloud-archives'); ?></li>
-                        <li><strong>page</strong> - <?php esc_html_e('Starting page number (default: 1)', 'wp-mixcloud-archives'); ?></li>
+                    <ul class="wp-mixcloud-admin-help-list">
+                        <li><strong>days</strong> - <?php esc_html_e('Show archives from last X days (1-365, default: 0 = show all)', 'wp-mixcloud-archives'); ?></li>
+                        <li><strong>start_date</strong> - <?php esc_html_e('Show archives from date (YYYY-MM-DD, optional)', 'wp-mixcloud-archives'); ?></li>
+                        <li><strong>end_date</strong> - <?php esc_html_e('Show archives until date (YYYY-MM-DD, optional)', 'wp-mixcloud-archives'); ?></li>
                     </ul>
                     
                     <h4><?php esc_html_e('Interface Options', 'wp-mixcloud-archives'); ?></h4>
-                    <ul style="margin-left: 20px;">
+                    <ul class="wp-mixcloud-admin-help-list">
                         <li><strong>mini_player</strong> - <?php esc_html_e('Use compact players (yes/no, default: yes)', 'wp-mixcloud-archives'); ?></li>
-                        <li><strong>lazy_load</strong> - <?php esc_html_e('Enable lazy loading (yes/no, default: yes)', 'wp-mixcloud-archives'); ?></li>
-                        <li><strong>show_date_filter</strong> - <?php esc_html_e('Show date filter controls (yes/no, default: yes)', 'wp-mixcloud-archives'); ?></li>
-                        <li><strong>show_pagination</strong> - <?php esc_html_e('Show pagination controls (yes/no, default: yes)', 'wp-mixcloud-archives'); ?></li>
+                        <li><strong>lazy_load</strong> - <?php esc_html_e('Enable lazy loading for images (yes/no, default: yes)', 'wp-mixcloud-archives'); ?></li>
                         <li><strong>show_social</strong> - <?php esc_html_e('Show social sharing buttons (yes/no, default: yes)', 'wp-mixcloud-archives'); ?></li>
                     </ul>
                 </div>
                 
                 <h3><?php esc_html_e('Example Usage', 'wp-mixcloud-archives'); ?></h3>
-                <div style="background: #f1f1f1; padding: 15px; border-radius: 4px; margin: 10px 0;">
-                    <p><strong><?php esc_html_e('Basic display:', 'wp-mixcloud-archives'); ?></strong><br>
+                <div class="wp-mixcloud-admin-info-box">
+                    <p><strong><?php esc_html_e('Basic display (shows all cloudcasts):', 'wp-mixcloud-archives'); ?></strong><br>
                     <code>[mixcloud_archives account="NowWaveRadio"]</code></p>
                     
-                    <p><strong><?php esc_html_e('Show 25 items with full-size players:', 'wp-mixcloud-archives'); ?></strong><br>
-                    <code>[mixcloud_archives account="username" limit="25" mini_player="no"]</code></p>
+                    <p><strong><?php esc_html_e('With full-size players:', 'wp-mixcloud-archives'); ?></strong><br>
+                    <code>[mixcloud_archives account="username" mini_player="no"]</code></p>
                     
                     <p><strong><?php esc_html_e('Recent shows (last 7 days):', 'wp-mixcloud-archives'); ?></strong><br>
                     <code>[mixcloud_archives account="username" days="7"]</code></p>
@@ -405,8 +400,11 @@ class WP_Mixcloud_Archives_Admin {
                     <p><strong><?php esc_html_e('Specific date range:', 'wp-mixcloud-archives'); ?></strong><br>
                     <code>[mixcloud_archives account="username" start_date="2024-01-01" end_date="2024-01-31"]</code></p>
                     
-                    <p><strong><?php esc_html_e('Minimal interface:', 'wp-mixcloud-archives'); ?></strong><br>
-                    <code>[mixcloud_archives account="username" show_date_filter="no" show_social="no"]</code></p>
+                    <p><strong><?php esc_html_e('Minimal interface (no social buttons):', 'wp-mixcloud-archives'); ?></strong><br>
+                    <code>[mixcloud_archives account="username" show_social="no"]</code></p>
+                    
+                    <p><strong><?php esc_html_e('Performance optimized (no lazy loading):', 'wp-mixcloud-archives'); ?></strong><br>
+                    <code>[mixcloud_archives account="username" lazy_load="no"]</code></p>
                     
                     <p><strong><?php esc_html_e('High-volume display:', 'wp-mixcloud-archives'); ?></strong><br>
                     <code>[mixcloud_archives account="username" limit="50" per_page="20"]</code></p>

@@ -99,7 +99,6 @@ class WP_Mixcloud_Archives_Shortcode_Handler {
             'limit'            => 10,
             'lazy_load'        => 'yes',
             'mini_player'      => 'yes',
-            'show_date_filter' => 'yes',
             'start_date'       => '',
             'end_date'         => '',
             'show_social'      => 'yes',
@@ -120,7 +119,6 @@ class WP_Mixcloud_Archives_Shortcode_Handler {
         $validated['limit'] = 0; // Remove limit to fetch all shows
         $validated['lazy_load'] = ($parsed_atts['lazy_load'] === 'yes');
         $validated['mini_player'] = ($parsed_atts['mini_player'] === 'yes');
-        $validated['show_date_filter'] = ($parsed_atts['show_date_filter'] === 'yes');
         $validated['show_social'] = ($parsed_atts['show_social'] === 'yes');
         
         // Validate and sanitize date parameters
@@ -307,7 +305,6 @@ class WP_Mixcloud_Archives_Shortcode_Handler {
         $options = array(
             'lazy_load'        => $atts['lazy_load'],
             'mini_player'      => $atts['mini_player'],
-            'show_date_filter' => $atts['show_date_filter'],
             'show_social'      => $atts['show_social'],
             'account'          => $atts['account'],
             'current_start_date' => $atts['start_date'],

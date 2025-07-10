@@ -206,6 +206,41 @@
     color: #333;
 }
 
+/* AIDEV-NOTE: Inline style replacements */
+.wp-mixcloud-admin-cache-status {
+    margin-left: 10px;
+    display: inline-block;
+}
+
+.wp-mixcloud-admin-help-section {
+    margin: 15px 0;
+}
+
+.wp-mixcloud-admin-help-list {
+    margin-left: 20px;
+    list-style-type: disc;
+}
+
+.wp-mixcloud-admin-help-list li {
+    margin-bottom: 5px;
+}
+
+.wp-mixcloud-admin-info-box {
+    background: #f1f1f1;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 10px 0;
+    border-left: 4px solid #0073aa;
+}
+
+.wp-mixcloud-admin-info-box p {
+    margin: 0 0 10px 0;
+}
+
+.wp-mixcloud-admin-info-box p:last-child {
+    margin-bottom: 0;
+}
+
 /* AIDEV-NOTE: Responsive design for admin interface */
 @media (max-width: 782px) {
     .wp-mixcloud-archives-admin .form-table th,

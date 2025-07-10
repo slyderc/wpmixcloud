@@ -1100,151 +1100,6 @@
     border-radius: 2px;
 }
 
-/* Date Filter Styles */
-.mixcloud-date-filter {
-    background: var(--onair-bg-secondary);
-    border: 1px solid var(--onair-border);
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.mixcloud-date-filter-title {
-    margin: 0 0 18px 0;
-    font-size: 17px;
-    color: var(--onair-text-primary);
-    font-weight: 700;
-    font-family: var(--onair-font-primary);
-    letter-spacing: -0.01em;
-}
-
-.mixcloud-date-filter-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 18px;
-    align-items: end;
-}
-
-.mixcloud-date-input-group {
-    display: flex;
-    flex-direction: column;
-    min-width: 160px;
-}
-
-.mixcloud-date-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--onair-text-secondary);
-    margin-bottom: 6px;
-    font-family: var(--onair-font-primary);
-}
-
-.mixcloud-date-input {
-    padding: 10px 12px;
-    border: 2px solid var(--onair-border);
-    border-radius: 8px;
-    font-size: 14px;
-    background: var(--onair-bg-primary);
-    color: var(--onair-text-primary);
-    transition: all 0.3s ease;
-    font-family: var(--onair-font-mono);
-}
-
-.mixcloud-date-input:focus {
-    outline: none;
-    border-color: var(--onair-accent);
-    box-shadow: 0 0 0 3px rgba(24, 99, 220, 0.2);
-    background: var(--onair-bg-tertiary);
-}
-
-.mixcloud-date-filter-buttons {
-    display: flex;
-    gap: 12px;
-}
-
-.mixcloud-date-filter-btn {
-    padding: 10px 18px;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--onair-font-primary);
-}
-
-.mixcloud-date-apply {
-    background: linear-gradient(135deg, var(--onair-accent), var(--onair-accent-hover));
-    color: var(--onair-text-primary);
-    box-shadow: 0 2px 8px rgba(24, 99, 220, 0.3);
-}
-
-.mixcloud-date-apply:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--onair-accent-hover), #0f3ba8);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(24, 99, 220, 0.4);
-}
-
-.mixcloud-date-clear {
-    background: linear-gradient(135deg, var(--onair-border-light), #505050);
-    color: var(--onair-text-primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.mixcloud-date-clear:hover:not(:disabled) {
-    background: linear-gradient(135deg, #505050, #404040);
-    transform: translateY(-1px);
-}
-
-.mixcloud-date-filter-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
-/* Filter Messages */
-.mixcloud-filter-message {
-    padding: 12px 18px;
-    border-radius: 8px;
-    margin: 12px 0;
-    font-size: 14px;
-    font-family: var(--onair-font-primary);
-    font-weight: 500;
-}
-
-.mixcloud-filter-message-success {
-    background: rgba(40, 167, 69, 0.15);
-    border: 1px solid var(--onair-success);
-    color: var(--onair-success);
-}
-
-.mixcloud-filter-message-error {
-    background: rgba(220, 53, 69, 0.15);
-    border: 1px solid var(--onair-error);
-    color: var(--onair-error);
-}
-
-/* Table Loading State */
-.mixcloud-table-loading {
-    opacity: 0.6;
-    pointer-events: none;
-    position: relative;
-}
-
-.mixcloud-table-loading::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 10;
-}
 
 /* Empty Row Styling */
 .mixcloud-archives-empty-row {
@@ -1254,41 +1109,6 @@
     padding: 30px 20px;
 }
 
-/* Responsive Date Filter */
-@media screen and (max-width: 768px) {
-    .mixcloud-date-filter-controls {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .mixcloud-date-input-group {
-        min-width: auto;
-    }
-    
-    .mixcloud-date-filter-buttons {
-        justify-content: center;
-        margin-top: 10px;
-    }
-    
-    .mixcloud-date-filter-btn {
-        flex: 1;
-        max-width: 150px;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    .mixcloud-date-filter {
-        padding: 15px;
-    }
-    
-    .mixcloud-date-filter-buttons {
-        flex-direction: column;
-    }
-    
-    .mixcloud-date-filter-btn {
-        max-width: none;
-    }
-}
 
 
 /* Social Sharing Styles */
@@ -1474,7 +1294,6 @@
     
     .mixcloud-player-column,
     .mixcloud-player-cell,
-    .mixcloud-date-filter,
     .mixcloud-pagination,
     .mixcloud-social-column,
     .mixcloud-social-cell {
