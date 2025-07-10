@@ -1,13 +1,13 @@
 <?php
 /**
  * Plugin Name: WP Mixcloud Archives
- * Plugin URI: https://github.com/your-username/wp-mixcloud-archives
+ * Plugin URI: https://github.com/slyderc/wpmixcloud
  * Description: A WordPress plugin to display Mixcloud archives with embedded players, supporting date filtering, pagination, and social sharing.
  * Version: 1.0.0
- * Author: Your Name
- * Author URI: https://yourwebsite.com
- * License: GPL v2 or later
- * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Author: Now Wave Radio, LLC
+ * Author URI: https://nowwave.radio
+ * License: MIT with Attribution
+ * License URI: https://opensource.org/licenses/MIT
  * Text Domain: wp-mixcloud-archives
  * Domain Path: /languages
  * Requires at least: 5.0
