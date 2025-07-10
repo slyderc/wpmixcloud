@@ -1,8 +1,9 @@
 /**
- * WP Mixcloud Archives - Frontend Styles (OnAir2 Theme)
+ * WP Mixcloud Archives - Frontend Styles
  *
  * @package WPMixcloudArchives
  */
+
 
 /* Mixcloud-Style Dark Theme Variables */
 :root {
@@ -21,19 +22,19 @@
     --mixcloud-warning: #F59E0B;          /* Warning yellow */
     
     /* Typography */
-    --onair-font-primary: 'Inter', 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-    --onair-font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    --mixcloud-font-primary: 'Inter', 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mixcloud-font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
 }
 
 /* Container and title styles */
 .mixcloud-archives-container {
     margin: 20px 0;
     font-family: 'Inter', 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif; /* Fallback */
-    font-family: var(--onair-font-primary);
-    background: #0F0F0F; /* Fallback for older browsers */
-    background: var(--mixcloud-bg-primary);
-    color: #FFFFFF; /* Fallback for older browsers */
-    color: var(--mixcloud-text-primary);
+    font-family: var(--mixcloud-font-primary);
+    background: #0F0F0F !important; /* Force dark background with fallback */
+    background: var(--mixcloud-bg-primary) !important;
+    color: #FFFFFF !important; /* Force white text with fallback */
+    color: var(--mixcloud-text-primary) !important;
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -70,7 +71,7 @@
     position: relative;
     min-width: 200px;
     max-width: 400px;
-    font-family: var(--onair-font-primary);
+    font-family: var(--mixcloud-font-primary);
 }
 
 .mixcloud-dropdown-selected {
@@ -324,20 +325,90 @@
 .mixcloud-list-title {
     font-size: 16px;
     font-weight: 700;
-    color: var(--mixcloud-text-primary);
+    color: #FFFFFF !important; /* Hard-coded white text */
     margin: 0;
-    font-family: var(--onair-font-primary);
+    font-family: 'Inter', 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--mixcloud-font-primary);
     letter-spacing: -0.01em;
     line-height: 1.3;
     word-wrap: break-word;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* More aggressive theme override for show titles */
+.mixcloud-archives-container .mixcloud-list-title,
+.mixcloud-archives-list .mixcloud-list-title,
+div.mixcloud-archives-container .mixcloud-list-title {
+    color: #FFFFFF !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9) !important;
 }
 
 .mixcloud-list-subtitle {
     font-size: 14px;
-    color: var(--mixcloud-text-secondary);
-    font-family: var(--onair-font-primary);
+    color: #A0A0A0 !important; /* Hard-coded gray text */
+    font-family: 'Inter', 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--mixcloud-font-primary);
     line-height: 1.3;
     word-wrap: break-word;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* More aggressive theme override for subtitles */
+.mixcloud-archives-container .mixcloud-list-subtitle,
+.mixcloud-archives-list .mixcloud-list-subtitle,
+div.mixcloud-archives-container .mixcloud-list-subtitle {
+    color: #A0A0A0 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* ULTIMATE NUCLEAR OPTION - Most aggressive CSS possible */
+* .mixcloud-archives-container .mixcloud-list-title,
+*:not() .mixcloud-archives-container .mixcloud-list-title,
+html * .mixcloud-archives-container .mixcloud-list-title,
+body * .mixcloud-archives-container .mixcloud-list-title,
+div.mixcloud-archives-container h3.mixcloud-list-title,
+.mixcloud-list-item h3.mixcloud-list-title,
+.mixcloud-archives-container .mixcloud-list-item .mixcloud-list-title,
+body .mixcloud-archives-container .mixcloud-list-title,
+html body .mixcloud-archives-container .mixcloud-list-title {
+    color: #FFFFFF !important;
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+    font-weight: 700 !important;
+    text-decoration: none !important;
+}
+
+body .mixcloud-archives-container .mixcloud-list-subtitle,
+html body .mixcloud-archives-container .mixcloud-list-subtitle,
+.mixcloud-archives-container .mixcloud-list-item .mixcloud-list-subtitle,
+div.mixcloud-archives-container .mixcloud-list-subtitle,
+.mixcloud-list-item .mixcloud-list-subtitle {
+    color: #A0A0A0 !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+}
+
+/* Force dark container background against any theme */
+body .mixcloud-archives-container,
+html body .mixcloud-archives-container,
+div.mixcloud-archives-container {
+    background: #0F0F0F !important;
+    background-color: #0F0F0F !important;
+    color: #FFFFFF !important;
+}
+
+/* Extra specificity for stubborn themes */
+.mixcloud-archives-container .mixcloud-list-content .mixcloud-list-header .mixcloud-list-title {
+    color: #FFFFFF !important;
+}
+
+.mixcloud-archives-container .mixcloud-list-content .mixcloud-list-header .mixcloud-list-subtitle {
+    color: #A0A0A0 !important;
 }
 
 /* Waveform area - hidden by default, shows player when active */
@@ -407,7 +478,7 @@
     padding: 8px 12px; /* Reduced padding for mini player */
     background: var(--mixcloud-bg-secondary);
     border-radius: 8px;
-    min-height: 60px; /* Reduced height for mini player */
+    min-height: 60px; /* Revert to original working height */
     position: absolute;
     top: 100%;
     left: 0;
@@ -416,7 +487,7 @@
 }
 
 .mixcloud-play-overlay .dashicons {
-    color: var(--onair-text-primary);
+    color: var(--mixcloud-text-primary);
     font-size: 24px;
     margin-left: 2px; /* Adjust for play button visual center */
 }
@@ -434,12 +505,12 @@
     font-size: 18px;
     font-weight: 700;
     line-height: 1.3;
-    color: var(--onair-text-primary);
+    color: var(--mixcloud-text-primary);
 }
 
 .mixcloud-card-description {
     margin: 0 0 16px 0;
-    color: var(--onair-text-secondary);
+    color: var(--mixcloud-text-secondary);
     line-height: 1.5;
     font-size: 14px;
     flex-grow: 1;
@@ -451,14 +522,14 @@
     gap: 16px;
     margin-top: auto;
     padding-top: 16px;
-    border-top: 1px solid var(--onair-border);
+    border-top: 1px solid var(--mixcloud-border);
 }
 
 .mixcloud-meta-item {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: var(--onair-text-muted);
+    color: var(--mixcloud-text-muted);
     font-size: 13px;
     font-weight: 500;
 }
@@ -467,13 +538,13 @@
     font-size: 16px;
     width: 16px;
     height: 16px;
-    color: var(--onair-accent);
+    color: var(--mixcloud-accent);
 }
 
 .mixcloud-card-social {
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 1px solid var(--onair-border);
+    border-top: 1px solid var(--mixcloud-border);
 }
 
 /* Artwork styles */
@@ -491,28 +562,28 @@
 .mixcloud-no-artwork-large {
     width: 100%;
     height: 100%;
-    background: var(--onair-bg-tertiary);
+    background: var(--mixcloud-bg-tertiary);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    color: var(--onair-text-muted);
+    color: var(--mixcloud-text-muted);
     font-size: 14px;
     text-align: center;
-    font-family: var(--onair-font-primary);
+    font-family: var(--mixcloud-font-primary);
 }
 
 .mixcloud-no-artwork-large .dashicons {
     font-size: 32px;
     width: 32px;
     height: 32px;
-    color: var(--onair-accent);
+    color: var(--mixcloud-accent);
 }
 
 /* Lazy loading states for artwork */
 .mixcloud-artwork[data-src] {
-    background: var(--onair-bg-tertiary);
+    background: var(--mixcloud-bg-tertiary);
     opacity: 0.6;
     transition: opacity 0.3s ease;
 }
@@ -530,7 +601,7 @@
     width: 20px;
     height: 20px;
     margin: -10px 0 0 -10px;
-    border: 2px solid var(--onair-text-primary);
+    border: 2px solid var(--mixcloud-text-primary);
     border-radius: 50%;
     border-top-color: transparent;
     animation: mixcloud-spin 0.8s linear infinite;
@@ -559,11 +630,11 @@
     margin: 5% auto;
     width: 90%;
     max-width: 800px;
-    background: var(--onair-bg-primary);
+    background: var(--mixcloud-bg-primary);
     border-radius: 16px;
     padding: 0;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-    border: 2px solid var(--onair-border);
+    border: 2px solid var(--mixcloud-border);
     animation: modalSlideIn 0.3s ease-out;
 }
 
@@ -582,7 +653,7 @@
     position: absolute;
     top: 15px;
     right: 20px;
-    color: var(--onair-text-secondary);
+    color: var(--mixcloud-text-secondary);
     font-size: 32px;
     font-weight: bold;
     cursor: pointer;
@@ -592,7 +663,7 @@
 }
 
 .mixcloud-modal-close:hover {
-    color: var(--onair-text-primary);
+    color: var(--mixcloud-text-primary);
 }
 
 .mixcloud-modal-player-container {
@@ -608,11 +679,11 @@
 }
 
 .mixcloud-player {
-    border: 2px solid var(--onair-border);
+    border: 2px solid var(--mixcloud-border);
     border-radius: 8px;
-    min-height: 64px;
+    min-height: 60px; /* Revert to original working height */
     display: none;
-    background: var(--onair-bg-tertiary);
+    background: var(--mixcloud-bg-tertiary);
 }
 
 /* Direct loaded player (no lazy loading) */
@@ -623,15 +694,15 @@
 /* Player wrapper and loading states */
 .mixcloud-player-wrapper {
     position: relative;
-    min-height: 64px;
+    min-height: 60px; /* Revert to original working height */
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .mixcloud-player-load-btn {
-    background: linear-gradient(135deg, var(--onair-accent), var(--onair-accent-hover));
-    color: var(--onair-text-primary);
+    background: linear-gradient(135deg, var(--mixcloud-accent), var(--mixcloud-accent-hover));
+    color: var(--mixcloud-text-primary);
     border: none;
     padding: 10px 18px;
     border-radius: 8px;
@@ -642,12 +713,12 @@
     align-items: center;
     gap: 8px;
     transition: all 0.3s ease;
-    font-family: var(--onair-font-primary);
+    font-family: var(--mixcloud-font-primary);
     box-shadow: 0 2px 8px rgba(24, 99, 220, 0.3);
 }
 
 .mixcloud-player-load-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--onair-accent-hover), #0f3ba8);
+    background: linear-gradient(135deg, var(--mixcloud-accent-hover), #0f3ba8);
     transform: translateY(-1px);
     box-shadow: 0 4px 16px rgba(24, 99, 220, 0.4);
 }
@@ -669,7 +740,7 @@
     display: inline-block;
     width: 16px;
     height: 16px;
-    border: 2px solid var(--onair-text-primary);
+    border: 2px solid var(--mixcloud-text-primary);
     border-radius: 50%;
     border-top-color: transparent;
     animation: mixcloud-spin 0.8s linear infinite;
@@ -685,7 +756,7 @@
 }
 
 .mixcloud-player-error .mixcloud-player-load-btn {
-    background: linear-gradient(135deg, var(--onair-error), #c82333);
+    background: linear-gradient(135deg, var(--mixcloud-error), #c82333);
 }
 
 .mixcloud-player-error .mixcloud-player-load-btn:hover:not(:disabled) {
@@ -702,19 +773,19 @@
 .mixcloud-description {
     margin-bottom: 10px;
     line-height: 1.5;
-    color: var(--onair-text-secondary);
+    color: var(--mixcloud-text-secondary);
     font-size: 14px;
-    font-family: var(--onair-font-primary);
+    font-family: var(--mixcloud-font-primary);
 }
 
 .mixcloud-stats {
     font-size: 12px;
-    color: var(--onair-text-muted);
+    color: var(--mixcloud-text-muted);
     font-style: italic;
     opacity: 0;
     transform: translateY(5px);
     transition: opacity 0.4s ease, transform 0.4s ease;
-    font-family: var(--onair-font-mono);
+    font-family: var(--mixcloud-font-mono);
 }
 
 .mixcloud-stats-visible {
@@ -723,10 +794,10 @@
 }
 
 .mixcloud-no-notes {
-    color: var(--onair-text-muted);
+    color: var(--mixcloud-text-muted);
     font-style: italic;
     font-size: 14px;
-    font-family: var(--onair-font-primary);
+    font-family: var(--mixcloud-font-primary);
 }
 
 /* Date column */
@@ -739,31 +810,31 @@
 
 .mixcloud-date {
     font-size: 13px;
-    color: var(--onair-text-secondary);
+    color: var(--mixcloud-text-secondary);
     line-height: 1.4;
-    font-family: var(--onair-font-mono);
+    font-family: var(--mixcloud-font-mono);
 }
 
 .mixcloud-date small {
-    color: var(--onair-text-muted);
+    color: var(--mixcloud-text-muted);
     font-size: 11px;
 }
 
 .mixcloud-date-error {
-    color: var(--onair-error);
+    color: var(--mixcloud-error);
     font-size: 12px;
 }
 
 /* Error and empty states */
 .mixcloud-archives-error {
     background: rgba(220, 53, 69, 0.1);
-    border: 1px solid var(--onair-error);
+    border: 1px solid var(--mixcloud-error);
     border-radius: 12px;
     padding: 20px;
-    color: var(--onair-error);
+    color: var(--mixcloud-error);
     margin: 20px 0;
     font-weight: 600;
-    font-family: var(--onair-font-primary);
+    font-family: var(--mixcloud-font-primary);
     display: flex;
     align-items: flex-start;
     gap: 12px;
@@ -785,8 +856,8 @@
 }
 
 .mixcloud-error-retry {
-    background: linear-gradient(135deg, var(--onair-error), #c82333);
-    color: var(--onair-text-primary);
+    background: linear-gradient(135deg, var(--mixcloud-error), #c82333);
+    color: var(--mixcloud-text-primary);
     border: none;
     padding: 8px 16px;
     border-radius: 6px;
@@ -794,7 +865,7 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-family: var(--onair-font-primary);
+    font-family: var(--mixcloud-font-primary);
 }
 
 .mixcloud-error-retry:hover {
@@ -809,7 +880,7 @@
 
 .mixcloud-error-debug summary {
     cursor: pointer;
-    color: var(--onair-text-muted);
+    color: var(--mixcloud-text-muted);
     font-weight: 500;
 }
 
@@ -817,34 +888,34 @@
     display: block;
     margin-top: 8px;
     padding: 8px;
-    background: var(--onair-bg-primary);
+    background: var(--mixcloud-bg-primary);
     border-radius: 4px;
-    font-family: var(--onair-font-mono);
+    font-family: var(--mixcloud-font-mono);
     font-size: 11px;
-    color: var(--onair-text-secondary);
+    color: var(--mixcloud-text-secondary);
 }
 
 .mixcloud-archives-empty {
-    background: var(--onair-bg-tertiary);
-    border: 1px solid var(--onair-border);
+    background: var(--mixcloud-bg-tertiary);
+    border: 1px solid var(--mixcloud-border);
     border-radius: 12px;
     padding: 24px;
-    color: var(--onair-text-muted);
+    color: var(--mixcloud-text-muted);
     margin: 20px 0;
     text-align: center;
     font-style: italic;
-    font-family: var(--onair-font-primary);
+    font-family: var(--mixcloud-font-primary);
 }
 
 /* Fallback content styles */
 .mixcloud-archives-fallback {
-    background: var(--onair-bg-secondary);
-    border: 2px solid var(--onair-border);
+    background: var(--mixcloud-bg-secondary);
+    border: 2px solid var(--mixcloud-border);
     border-radius: 12px;
     padding: 24px;
     margin: 20px 0;
     text-align: center;
-    font-family: var(--onair-font-primary);
+    font-family: var(--mixcloud-font-primary);
 }
 
 .mixcloud-fallback-icon {
@@ -854,7 +925,7 @@
 }
 
 .mixcloud-fallback-content h4 {
-    color: var(--onair-text-primary);
+    color: var(--mixcloud-text-primary);
     font-size: 20px;
     font-weight: 700;
     margin: 0 0 12px 0;
@@ -862,24 +933,24 @@
 }
 
 .mixcloud-fallback-content p {
-    color: var(--onair-text-secondary);
+    color: var(--mixcloud-text-secondary);
     margin: 0 0 16px 0;
     line-height: 1.6;
 }
 
 .mixcloud-fallback-content a {
-    color: var(--onair-accent);
+    color: var(--mixcloud-accent);
     text-decoration: none;
     font-weight: 600;
 }
 
 .mixcloud-fallback-content a:hover {
-    color: var(--onair-text-primary);
+    color: var(--mixcloud-text-primary);
     text-decoration: underline;
 }
 
 .mixcloud-fallback-cached {
-    background: var(--onair-bg-primary);
+    background: var(--mixcloud-bg-primary);
     border-radius: 8px;
     padding: 16px;
     margin: 16px 0;
@@ -887,7 +958,7 @@
 }
 
 .mixcloud-fallback-cached h5 {
-    color: var(--onair-text-primary);
+    color: var(--mixcloud-text-primary);
     font-size: 14px;
     font-weight: 700;
     margin: 0 0 12px 0;
@@ -903,7 +974,7 @@
 
 .mixcloud-fallback-list li {
     padding: 6px 0;
-    border-bottom: 1px solid var(--onair-border);
+    border-bottom: 1px solid var(--mixcloud-border);
 }
 
 .mixcloud-fallback-list li:last-child {
@@ -911,25 +982,25 @@
 }
 
 .mixcloud-fallback-list a {
-    color: var(--onair-accent);
+    color: var(--mixcloud-accent);
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
 }
 
 .mixcloud-fallback-list a:hover {
-    color: var(--onair-text-primary);
+    color: var(--mixcloud-text-primary);
 }
 
 .mixcloud-fallback-list small {
-    color: var(--onair-text-muted);
+    color: var(--mixcloud-text-muted);
     font-size: 12px;
     margin-left: 8px;
 }
 
 .mixcloud-fallback-retry {
-    background: linear-gradient(135deg, var(--onair-accent), var(--onair-accent-hover));
-    color: var(--onair-text-primary);
+    background: linear-gradient(135deg, var(--mixcloud-accent), var(--mixcloud-accent-hover));
+    color: var(--mixcloud-text-primary);
     border: none;
     padding: 12px 24px;
     border-radius: 8px;
@@ -937,13 +1008,13 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-family: var(--onair-font-primary);
+    font-family: var(--mixcloud-font-primary);
     margin-top: 16px;
     box-shadow: 0 2px 8px rgba(24, 99, 220, 0.3);
 }
 
 .mixcloud-fallback-retry:hover {
-    background: linear-gradient(135deg, var(--onair-accent-hover), #0f3ba8);
+    background: linear-gradient(135deg, var(--mixcloud-accent-hover), #0f3ba8);
     transform: translateY(-1px);
     box-shadow: 0 4px 16px rgba(24, 99, 220, 0.4);
 }
@@ -951,16 +1022,20 @@
 /* Mixcloud Player in Waveform */
 .mixcloud-list-waveform.mixcloud-player-active {
     display: flex; /* Show when player is active */
-    height: 60px; /* Match mini player height */
+    height: 60px; /* Revert to original working height */
+    min-height: 60px; /* Ensure minimum height */
     background: transparent;
     align-items: center;
     overflow: visible; /* Ensure player is not clipped */
+    margin: 8px 0; /* Add vertical spacing */
 }
 
 .mixcloud-list-waveform .mixcloud-player-iframe {
     border: none;
     border-radius: 4px;
     background: var(--mixcloud-bg-secondary);
+    min-height: 60px; /* Revert to working height */
+    height: 60px; /* Match container height */
 }
 
 
@@ -1078,9 +1153,9 @@
 .mixcloud-archives-loading {
     text-align: center;
     padding: 40px;
-    color: var(--onair-text-muted);
+    color: var(--mixcloud-text-muted);
     font-style: italic;
-    font-family: var(--onair-font-primary);
+    font-family: var(--mixcloud-font-primary);
 }
 
 .mixcloud-archives-loading:before {
@@ -1090,12 +1165,12 @@
 
 /* Accessibility improvements */
 .mixcloud-archives-table:focus-within {
-    outline: 2px solid var(--onair-accent);
+    outline: 2px solid var(--mixcloud-accent);
     outline-offset: 2px;
 }
 
 .mixcloud-title-link:focus {
-    outline: 2px solid var(--onair-accent);
+    outline: 2px solid var(--mixcloud-accent);
     outline-offset: 2px;
     border-radius: 2px;
 }
@@ -1124,10 +1199,10 @@
     align-items: center;
     justify-content: center;
     padding: 8px 10px;
-    border: 2px solid var(--onair-border);
+    border: 2px solid var(--mixcloud-border);
     border-radius: 6px;
-    background: var(--onair-bg-secondary);
-    color: var(--onair-text-secondary);
+    background: var(--mixcloud-bg-secondary);
+    color: var(--mixcloud-text-secondary);
     text-decoration: none;
     cursor: pointer;
     font-size: 12px;
@@ -1136,7 +1211,7 @@
     min-width: 40px;
     min-height: 40px;
     gap: 6px;
-    font-family: var(--onair-font-primary);
+    font-family: var(--mixcloud-font-primary);
 }
 
 .mixcloud-social-btn:hover {
@@ -1276,7 +1351,7 @@
     }
     
     .mixcloud-list-waveform.mixcloud-player-active {
-        height: 60px; /* Same height on mobile for mini player */
+        height: 60px; /* Revert to original working height on mobile */
     }
     
     .mixcloud-social-btn {

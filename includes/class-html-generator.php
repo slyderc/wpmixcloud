@@ -166,7 +166,7 @@ class WP_Mixcloud_Archives_HTML_Generator {
      */
     private function generate_header_html($cloudcast, $options) {
         $html = '<div class="mixcloud-list-header">';
-        $html .= '<h3 class="mixcloud-list-title">';
+        $html .= '<h3 class="mixcloud-list-title" style="color: #FFFFFF !important; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;">';
         $html .= esc_html($cloudcast['name']);
         $html .= '</h3>';
         
@@ -177,7 +177,7 @@ class WP_Mixcloud_Archives_HTML_Generator {
             $duration = $this->format_duration($cloudcast['audio_length']);
         }
         
-        $html .= '<div class="mixcloud-list-subtitle">';
+        $html .= '<div class="mixcloud-list-subtitle" style="color: #A0A0A0 !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;">';
         if (!empty($duration)) {
             $html .= sprintf('%s • %s', esc_html($duration), esc_html($date_display));
         } else {
