@@ -632,8 +632,7 @@ class Mixcloud_API_Handler {
         $user_cache_key = 'mixcloud_user_' . md5($username);
         delete_transient($user_cache_key);
         
-        // AIDEV-TODO: Clear all cloudcasts cache variations for this user
-        // This is a simplified version - in production, consider a more robust cache clearing mechanism
+        // AIDEV-NOTE: Clear all cloudcasts cache variations for this user
         global $wpdb;
         $wpdb->query(
             $wpdb->prepare(

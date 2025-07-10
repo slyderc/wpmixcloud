@@ -325,7 +325,6 @@ class WP_Mixcloud_Archives_Admin {
             echo '</div>';
         }
         
-        // AIDEV-TODO: Add cache clear button after cache management implementation
         echo '<p><button type="button" class="button" onclick="location.reload();">' . esc_html__('Refresh Status', 'wp-mixcloud-archives') . '</button></p>';
     }
     

@@ -28,8 +28,11 @@
 /* Container and title styles */
 .mixcloud-archives-container {
     margin: 20px 0;
+    font-family: 'Inter', 'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif; /* Fallback */
     font-family: var(--onair-font-primary);
+    background: #0F0F0F; /* Fallback for older browsers */
     background: var(--mixcloud-bg-primary);
+    color: #FFFFFF; /* Fallback for older browsers */
     color: var(--mixcloud-text-primary);
     border-radius: 8px;
     padding: 20px;
@@ -42,7 +45,9 @@
     font-size: 1.75em;
     font-weight: 700;
     margin-bottom: 24px;
+    color: #FFFFFF; /* Fallback for older browsers */
     color: var(--mixcloud-text-primary);
+    border-bottom: 2px solid #2D2D2D; /* Fallback for older browsers */
     border-bottom: 2px solid var(--mixcloud-border);
     padding-bottom: 12px;
     letter-spacing: -0.02em;
@@ -55,6 +60,7 @@
     justify-content: space-between;
     margin-bottom: 20px;
     padding-bottom: 16px;
+    border-bottom: 1px solid #2D2D2D; /* Fallback for older browsers */
     border-bottom: 1px solid var(--mixcloud-border);
     gap: 20px;
     flex-wrap: wrap;
@@ -72,9 +78,12 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
+    border: 2px solid #2D2D2D; /* Fallback for older browsers */
     border: 2px solid var(--mixcloud-border);
     border-radius: 8px;
+    background: #1A1A1A; /* Fallback for older browsers */
     background: var(--mixcloud-bg-secondary);
+    color: #FFFFFF; /* Fallback for older browsers */
     color: var(--mixcloud-text-primary);
     font-size: 14px;
     font-weight: 500;
@@ -127,7 +136,9 @@
     right: 0;
     max-height: 200px;
     overflow-y: auto;
+    background: #1A1A1A; /* Fallback for older browsers */
     background: var(--mixcloud-bg-secondary);
+    border: 2px solid #fbb53c; /* Fallback for older browsers */
     border: 2px solid var(--mixcloud-accent);
     border-top: none;
     border-radius: 0 0 8px 8px;
@@ -212,12 +223,13 @@
 
 /* List item styles */
 .mixcloud-list-item {
-    display: grid;
-    grid-template-columns: 120px 1fr minmax(60px, auto) minmax(130px, 140px);
+    display: flex;
     align-items: center;
     gap: 15px;
     padding: 16px;
+    background: #0F0F0F; /* Fallback for older browsers */
     background: var(--mixcloud-bg-primary);
+    border-bottom: 1px solid #2D2D2D; /* Fallback for older browsers */
     border-bottom: 1px solid var(--mixcloud-border);
     transition: background-color 0.2s ease;
     position: relative;
@@ -268,6 +280,7 @@
     transform: translate(-50%, -50%);
     width: 40px;
     height: 40px;
+    background: #fbb53c; /* Fallback for older browsers */
     background: var(--mixcloud-accent);
     border: none;
     border-radius: 50%;
@@ -299,6 +312,7 @@
     flex-direction: column;
     gap: 8px;
     min-width: 0; /* Allow text truncation */
+    padding-right: 10px; /* Add spacing between content and duration */
 }
 
 .mixcloud-list-header {
@@ -347,22 +361,25 @@
     opacity: 0.5;
 }
 
-/* Duration - positioned in 3rd grid column */
+/* Duration - positioned after content */
 .mixcloud-list-duration {
     font-size: 14px;
     color: var(--mixcloud-text-secondary);
     font-weight: 500;
     white-space: nowrap;
-    grid-column: 3;
+    width: 60px;
+    text-align: center;
+    flex-shrink: 0;
 }
 
-/* Social sharing buttons - positioned in 4th grid column */
+/* Social sharing buttons - positioned at end */
 .mixcloud-list-social {
     display: flex;
     gap: 3px; /* Reduced gap to fit all 4 buttons */
     align-items: center;
-    grid-column: 4;
+    width: 140px;
     justify-content: flex-end;
+    flex-shrink: 0;
 }
 
 .mixcloud-social-btn {
@@ -395,12 +412,17 @@
 
 /* Inline player container */
 .mixcloud-inline-player {
-    grid-column: 1 / -1;
+    width: 100%;
     margin-top: 16px;
     padding: 8px 12px; /* Reduced padding for mini player */
     background: var(--mixcloud-bg-secondary);
     border-radius: 8px;
     min-height: 60px; /* Reduced height for mini player */
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 10;
 }
 
 .mixcloud-play-overlay .dashicons {
@@ -1350,7 +1372,7 @@
 /* Responsive styles for list layout */
 @media screen and (max-width: 768px) {
     .mixcloud-list-item {
-        grid-template-columns: 100px minmax(280px, 1fr);
+        flex-wrap: wrap;
         gap: 12px;
         padding: 12px;
     }
@@ -1360,13 +1382,25 @@
         height: 100px;
     }
     
+    .mixcloud-list-content {
+        flex: 1;
+        min-width: 200px;
+    }
+    
     .mixcloud-list-duration,
     .mixcloud-list-social {
-        grid-column: 2;
+        flex-basis: 100%;
+        margin-top: 8px;
+    }
+    
+    .mixcloud-list-duration {
+        width: auto;
+        text-align: left;
     }
     
     .mixcloud-list-social {
-        margin-top: 8px;
+        width: auto;
+        justify-content: flex-start;
     }
     
     .mixcloud-custom-dropdown {
@@ -1377,7 +1411,6 @@
 
 @media screen and (max-width: 480px) {
     .mixcloud-list-item {
-        grid-template-columns: 80px minmax(220px, 1fr);
         gap: 8px;
         padding: 8px;
     }
@@ -1385,6 +1418,10 @@
     .mixcloud-list-thumbnail {
         width: 80px;
         height: 80px;
+    }
+    
+    .mixcloud-list-content {
+        min-width: 150px;
     }
     
     .mixcloud-play-button {

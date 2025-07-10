@@ -4,305 +4,111 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-WP Mixcloud Archives is a WordPress plugin that displays Mixcloud show archives with embedded players, supporting date filtering, pagination, and social sharing. The plugin fetches data from the Mixcloud API for the "NowWaveRadio" account and provides a shortcode for integration into WordPress pages.
+**WP Mixcloud Archives** is a WordPress plugin that integrates with the Mixcloud API to display radio show archives with embedded players, date filtering, and social sharing. Built for the NowWaveRadio account with the OnAir2 theme.
 
-## Essential Development Commands
+## Development Commands
 
-### Asset Building
+### Build System
 ```bash
-# One-time setup of build system
-cd build-tools && ./setup.sh
-
-# Build all assets (CSS + JS minification)
-cd build-tools && npm run build
-
-# Development mode with file watching
-cd build-tools && npm run watch
-
-# Create distribution package
-cd build-tools && npm run package:zip
-
-# Clean all generated files
-cd build-tools && npm run clean
+cd build-tools
+npm run build     # Production build (minify CSS/JS)
+npm run watch     # Development with file watching
+npm run package   # Create distribution ZIP
+npm run clean     # Remove minified files
 ```
-
-### WordPress Development
-```bash
-# Install plugin (copy to WordPress plugins directory)
-cp -r . /path/to/wordpress/wp-content/plugins/wp-mixcloud-archives
-
-# Activate via WP-CLI (if available)
-wp plugin activate wp-mixcloud-archives
-```
-
-## Architecture Overview
-
-### Core Plugin Structure
-- **Singleton Pattern**: Main plugin class (`WP_Mixcloud_Archives`) uses singleton pattern for global access
-- **Autoload System**: Classes are loaded conditionally (admin classes only in admin area)
-- **Hook-Based Architecture**: WordPress hooks drive all functionality initialization
-- **API Handler Separation**: Mixcloud API logic isolated in dedicated handler class
-
-### Key Components
-
-#### 1. Main Plugin Class (`wp-mixcloud-archives.php`)
-```php
-WP_Mixcloud_Archives::get_instance()
-```
-- Singleton entry point
-- Manages hook registration
-- Coordinates between API handler and admin interface
-- Handles asset enqueuing and performance optimizations
-
-#### 2. API Handler (`includes/class-mixcloud-api.php`)
-```php
-Mixcloud_API_Handler
-```
-- **Circuit Breaker Pattern**: Prevents cascading failures with automatic recovery
-- **Multi-tier Caching**: Object cache (L1) + WordPress transients (L2)
-- **Retry Logic**: Exponential backoff for failed requests
-- **Performance Optimized**: 15s timeout, 5s connection timeout
-- **Conditional Requests**: ETag headers for efficient caching
-
-#### 3. Admin Interface (`admin/class-wp-mixcloud-archives-admin.php`)
-- WordPress admin integration
-- Settings management
-- Plugin configuration interface
-
-#### 4. Frontend Assets (`assets/`)
-- **CSS**: OnAir2 theme with CSS custom properties
-- **JavaScript**: Modern ES6+ with Intersection Observer for lazy loading
-- **AJAX Enhancement**: Request deduplication and retry logic
-- **Performance Features**: Lazy loading for images and players
-
-### Build System Architecture
-
-#### Automated Pipeline (`build-tools/`)
-```bash
-Source Files → Minification → Package Creation → Distribution
-```
-
-**Key Features:**
-- **DRY Principle**: Uses `.gitignore` as single source of truth for file exclusions
-- **Smart Filtering**: Automatically excludes development files from distribution
-- **Version Detection**: Reads plugin version from main PHP file header
-- **Asset Validation**: Ensures critical files are present in packages
-
-**Build Configuration:**
-```javascript
-// build-tools/build.js
-CONFIG = {
-    terserOptions: { 
-        mangle: { reserved: ['wpMixcloudArchives', 'wpMixcloudArchivesRefresh'] }
-    },
-    package: {
-        include: ['*.php', 'assets/**/*', 'includes/**/*', 'admin/**/*'],
-        additionalExcludes: ['BUILD-SYSTEM.md', 'PRD.md', '.taskmaster/**/*']
-    }
-}
-```
-
-### Performance Architecture
-
-#### Caching Strategy
-```php
-// L1: Object Cache (in-memory, fastest)
-wp_cache_get($cache_key, 'mixcloud_cloudcasts')
-
-// L2: Transients (database-backed, persistent)  
-get_transient($transient_key)
-```
-
-#### API Optimization
-- **Circuit Breaker**: 5 failure threshold, 5-minute timeout
-- **Request Deduplication**: Prevents concurrent identical requests
-- **Conditional Headers**: ETag-based cache validation
-- **Timeout Optimization**: Separate connection (5s) and total (15s) timeouts
-
-#### Frontend Performance
-- **Lazy Loading**: Intersection Observer for images and players
-- **Asset Minification**: Automated CSS/JS compression
-- **Resource Hints**: Preconnect and DNS prefetch for external resources
-- **AJAX Optimization**: Request deduplication with Map-based tracking
-
-### WordPress Integration Patterns
-
-#### Shortcode System
-```php
-[mixcloud_archives account="NowWaveRadio" limit="20" mini_player="true"]
-```
-
-#### Hook Architecture
-```php
-// Performance optimizations
-add_action('init', 'init_performance_optimizations')
-
-// Asset loading
-add_action('wp_enqueue_scripts', 'enqueue_scripts')
-
-// AJAX handlers  
-add_action('wp_ajax_mixcloud_filter_by_date', 'handle_date_filter')
-add_action('wp_ajax_nopriv_mixcloud_filter_by_date', 'handle_date_filter')
-```
-
-#### Caching Integration
-```php
-// WordPress transients for short-term cache
-set_transient($key, $data, $expiration)
-
-// Object cache for request-level performance
-wp_cache_set($key, $data, $group, $expiration)
-```
-
-## Code Conventions
-
-### PHP Standards
-- **WordPress Coding Standards**: Follow WP coding conventions
-- **Security First**: All inputs sanitized, outputs escaped
-- **AIDEV Comments**: Use `AIDEV-NOTE:`, `AIDEV-TODO:`, `AIDEV-QUESTION:` for context
-- **Class Naming**: PascalCase with descriptive prefixes (`Mixcloud_API_Handler`)
-
-### JavaScript Patterns
-- **Modern ES6+**: Use const/let, arrow functions, async/await
-- **Performance Focus**: Intersection Observer over scroll events
-- **Error Handling**: Comprehensive try/catch with user feedback
-- **Global Preservation**: Maintain `wpMixcloudArchives` namespace
-
-### CSS Architecture
-- **CSS Custom Properties**: Use `--onair-*` variables for theming
-- **Mobile First**: Responsive design with progressive enhancement
-- **Performance**: Minimal reflows, optimized animations
-- **Accessibility**: WCAG compliant with proper ARIA labels
-
-## File Organization
-
-### Development vs Distribution
-```
-Development:
-├── build-tools/          # Build system (NOT distributed)
-├── BUILD-SYSTEM.md       # Documentation (NOT distributed)
-├── assets/css/style.css  # Source files (distributed)
-└── assets/css/style.min.css # Generated files (distributed)
-
-Distribution (via npm run package):
-├── wp-mixcloud-archives.php
-├── assets/css/style.min.css
-├── assets/js/script.min.js
-├── includes/
-└── admin/
-```
-
-### Critical Files
-- `wp-mixcloud-archives.php` - Plugin entry point
-- `includes/class-mixcloud-api.php` - API handler
-- `assets/css/style.min.css` - Minified styles
-- `assets/js/script.min.js` - Minified JavaScript
-
-## Development Workflow
-
-### Local Development
-1. **Setup**: Run `cd build-tools && ./setup.sh` once
-2. **Development**: Use `npm run watch` for auto-rebuilding
-3. **Testing**: Copy plugin to WordPress installation
-4. **Distribution**: Use `npm run package:zip` for final package
-
-### Code Modification Patterns
-1. **Edit Source Files**: Never edit `.min.css` or `.min.js` directly
-2. **API Changes**: Modify `class-mixcloud-api.php` with caching considerations
-3. **Frontend Updates**: Update `assets/css/style.css` and `assets/js/script.js`
-4. **Build Assets**: Run build system before committing
-
-### Performance Considerations
-- **Caching**: Always implement appropriate caching for API calls
-- **Lazy Loading**: Use Intersection Observer for deferred loading
-- **Error Handling**: Implement graceful degradation for API failures
-- **Asset Optimization**: Leverage build system for production assets
-
-## WordPress Specific Notes
-
-### Plugin Standards
-- **Activation/Deactivation**: Clean up on plugin lifecycle events
-- **Security**: Nonce verification for all AJAX requests
-- **Internationalization**: Text domain `wp-mixcloud-archives`
-- **Database**: Use WordPress transients, avoid custom tables
-
-### API Integration
-- **External Requests**: Use `wp_remote_get()` instead of cURL
-- **Caching**: Leverage WordPress object cache and transients
-- **Error Handling**: WordPress-style error objects (`WP_Error`)
-- **Rate Limiting**: Implement circuit breaker for API protection
-
-## Required Taskmaster Integration
-
-This project requires Taskmaster for task management and progress tracking. All development work must integrate with Taskmaster workflows.
 
 ### Initial Setup
 ```bash
-# Initialize Taskmaster in project (run once)
-task-master init --project-root=/Users/clint/Development/wpmixcloud
+cd build-tools && ./setup.sh
 ```
 
-### Essential Taskmaster Commands
-```bash
-# List current tasks with tree view
-task-master list --tag=<active-tag> --tree
+### Testing
+No automated tests - uses comprehensive manual testing checklist in `tests/manual-testing-checklist.md`.
 
-# Get next priority task
-task-master next --tag=<active-tag>
+## Code Architecture
 
-# Update task status
-task-master set-status --id=<task-id> --status=done
-task-master set-status --id=<task-id> --status=in-progress
-task-master set-status --id=<task-id> --status=blocked --reason="<explanation>"
+### Core Plugin Structure
+- **Main Class**: `WP_Mixcloud_Archives` (singleton pattern in `wp-mixcloud-archives.php`)
+- **Component System**: Six key classes in `includes/` directory
+- **Hook-based**: Proper WordPress lifecycle integration
 
-# Show task details before implementation
-task-master show <task-id>
+### Key Classes
+1. **Mixcloud_API** - API integration with caching and circuit breaker
+2. **Shortcode_Handler** - Processes `[mixcloud_archives]` shortcode  
+3. **AJAX_Handler** - Date filtering and pagination with rate limiting
+4. **HTML_Generator** - Renders responsive archive display
+5. **Cache_Manager** - Multi-tier caching (Object → Transients → API)
+6. **Assets_Manager** - CSS/JS enqueue management
 
-# Research technical approaches
-task-master research "<technical query>" --tag=<active-tag> --save-to=<task-id>
-
-# Add implementation notes
-task-master add-note --id=<task-id> --note="<implementation details>"
+### Shortcode Usage
+```
+[mixcloud_archives account="NowWaveRadio" limit="20" per_page="5" days="7"]
 ```
 
-### Task Management Workflow
-1. **Query Status**: Always check current task status before starting work
-2. **Validate Dependencies**: Ensure prerequisite tasks are marked `done`
-3. **Update Progress**: Mark tasks `in-progress` when starting, `done` when complete
-4. **Document Decisions**: Use task notes for technical decisions and implementation details
-5. **Research Integration**: Save research findings to relevant task IDs
+**Key Parameters:**
+- `account` (required): Mixcloud username
+- `limit`: Max cloudcasts (1-100, default: 10)
+- `per_page`: Items per page (1-50, default: 10)
+- `days`: Show last N days (1-365, default: 30)
+- `mini_player`: Compact players (yes/no)
+- `show_social`: Social sharing buttons (yes/no)
 
-### Project Structure Updates
+## Security & Performance
 
-The current project includes additional directories not covered in the original documentation:
+### Security Features
+- Input sanitization on all user inputs
+- Output escaping for XSS prevention
+- Nonce verification for AJAX requests
+- Rate limiting (30 requests per 5 minutes)
+- Capability checks for admin access
 
-```
-wp-mixcloud-archives/
-├── docs/                 # Comprehensive documentation
-│   ├── admin-configuration.md
-│   ├── development.md
-│   ├── installation.md
-│   ├── limitations.md
-│   └── shortcode-usage.md
-├── tests/                # Testing framework and results
-│   ├── manual-testing-checklist.md
-│   ├── setup-instructions.md
-│   ├── test-config.php
-│   └── test-results.md
-├── templates/            # WordPress template files
-├── AGENTS.md             # AI agent coordination instructions
-├── QUICKSTART.md         # Quick development setup guide
-└── logs/                 # Application and development logs
-```
+### Performance Optimizations
+- Multi-tier caching strategy
+- Lazy loading for Mixcloud players
+- Circuit breaker pattern for API failures
+- Efficient WordPress option storage
 
-### Testing Framework
-The `tests/` directory contains:
-- **Manual Testing**: Checklist-based testing approach
-- **Test Configuration**: WordPress test environment setup
-- **Results Tracking**: Historical test results and regression tracking
-- **Setup Instructions**: Environment preparation for testing
+## Asset Pipeline
 
-### Documentation Standards
-- **Comprehensive Docs**: The `docs/` directory provides end-user and developer documentation
-- **AGENTS.md**: Provides coordination instructions for AI development assistants
-- **QUICKSTART.md**: Streamlined setup guide for rapid development iteration
+### File Structure
+- **Source**: `assets/css/style.css`, `assets/js/script.js`
+- **Built**: `assets/css/style.min.css`, `assets/js/script.min.js`
+- **Build tools preserve WordPress globals and remove debug output**
+
+### Browser Compatibility
+- **Cross-browser layout**: Uses Flexbox instead of CSS Grid for Safari compatibility
+- **JavaScript fallbacks**: XMLHttpRequest fallback for older Safari versions (< 10.1)
+- **CSS fallbacks**: Hard-coded fallback values for CSS custom properties (Safari < 9.1)
+- **No autoplay**: Mixcloud iframes don't autoplay for Safari compliance
+- **Date sanitization**: Consistent regex patterns between PHP and JavaScript for show title filtering
+
+## WordPress Integration
+
+### Plugin Lifecycle
+- Activation hook registers default settings
+- Admin settings page at **Settings → WP Mixcloud Archives**
+- Single option array for efficient storage
+- Translation-ready with textdomain support
+
+### AJAX Endpoints
+- `wp_ajax_mixcloud_filter_archives` - Date filtering
+- `wp_ajax_nopriv_mixcloud_filter_archives` - Public access
+- Rate limited and nonce-protected
+
+## Development Notes
+
+### Code Quality Standards
+- Uses AIDEV anchor comments for greppable documentation
+- Singleton pattern for main plugin class
+- Proper WordPress hooks and filters
+- Security-first approach with sanitization/escaping
+- Production-ready code with debug statements removed
+
+### Missing Infrastructure
+- No automated unit tests (PHPUnit recommended)
+- No linting configuration (.phpcs.xml, .eslintrc)
+- No Composer dependencies
+- No CI/CD pipeline
+
+### File Watching
+Development workflow uses `npm run watch` for automatic rebuilds when source files change.

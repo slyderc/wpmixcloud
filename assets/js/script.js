@@ -66,8 +66,8 @@
                 hide_cover: '1',
                 mini: '1', // Use mini player
                 light: '0', // Dark theme player
-                hide_artwork: '1', // Hide artwork in player
-                autoplay: '1'
+                hide_artwork: '1' // Hide artwork in player
+                // Note: Removed autoplay for Safari compatibility
             };
             
             const paramString = Object.keys(embedParams).map(key => key + '=' + embedParams[key]).join('&');
@@ -189,12 +189,13 @@
                 
                 listItems.forEach(item => {
                     const title = item.querySelector('.mixcloud-list-title').textContent;
-                    const cleanTitle = title.replace(/\s*[–-]\s*\d{1,2}\/\d{1,2}\/\d{4}$/, '')
-                                           .replace(/\s*[–-]\s*\d{4}-\d{2}-\d{2}$/, '')
+                    const cleanTitle = title.replace(/\s*[–-•]\s*\d{1,2}\/\d{1,2}\/\d{4}$/, '')        // MM/DD/YYYY or M/D/YYYY
+                                           .replace(/\s*[–-•]\s*\d{4}-\d{2}-\d{2}$/, '')             // YYYY-MM-DD
+                                           .replace(/\s*[–-•]\s*\d{1,2}-\d{1,2}-\d{4}$/, '')        // MM-DD-YYYY or M-D-YYYY
                                            .trim();
                     
                     if (filter === 'all' || cleanTitle === filter) {
-                        item.style.display = 'grid';
+                        item.style.display = 'flex';
                     } else {
                         item.style.display = 'none';
                     }
@@ -477,14 +478,34 @@
     const activeRequests = new Map();
     
     /**
-     * Enhanced AJAX request helper with timeout and retry logic
+     * Cross-browser AJAX request helper with timeout and retry logic
+     * Falls back to XMLHttpRequest for older Safari versions
      * 
      * @param {string} url Request URL
      * @param {Object} data Request data
      * @param {Object} options Request options (timeout, retries, signal)
      * @returns {Promise} Promise that resolves to response data
      */
-    async function makeAjaxRequest(url, data, options = {}) {
+    function makeAjaxRequest(url, data, options = {}) {
+        const {
+            timeout = 10000,
+            retries = 2,
+            signal
+        } = options;
+        
+        // Check if fetch is available (Safari 10.1+)
+        if (typeof fetch !== 'undefined' && typeof AbortController !== 'undefined') {
+            return makeFetchRequest(url, data, options);
+        } else {
+            // Fallback to XMLHttpRequest for older browsers
+            return makeXHRRequest(url, data, options);
+        }
+    }
+    
+    /**
+     * Modern fetch-based request
+     */
+    async function makeFetchRequest(url, data, options = {}) {
         const {
             timeout = 10000,
             retries = 2,
@@ -495,23 +516,19 @@
         
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
-                // Create timeout promise
-                const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('Request timeout')), timeout);
-                });
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeout);
                 
-                // Create fetch promise
-                const fetchPromise = fetch(url, {
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
                     body: new URLSearchParams(data),
-                    signal: signal
+                    signal: signal || controller.signal
                 });
                 
-                // Race between timeout and fetch
-                const response = await Promise.race([fetchPromise, timeoutPromise]);
+                clearTimeout(timeoutId);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -540,6 +557,68 @@
         }
         
         throw lastError;
+    }
+    
+    /**
+     * XMLHttpRequest fallback for older browsers
+     */
+    function makeXHRRequest(url, data, options = {}) {
+        const {
+            timeout = 10000,
+            retries = 2
+        } = options;
+        
+        return new Promise((resolve, reject) => {
+            let attempt = 0;
+            
+            function tryRequest() {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', url, true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.timeout = timeout;
+                
+                xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const responseData = JSON.parse(xhr.responseText);
+                            resolve(responseData);
+                        } catch (e) {
+                            reject(new Error('Invalid JSON response'));
+                        }
+                    } else {
+                        const error = new Error(`HTTP ${xhr.status}: ${xhr.statusText}`);
+                        handleError(error);
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    handleError(new Error('Network error'));
+                };
+                
+                xhr.ontimeout = function() {
+                    handleError(new Error('Request timeout'));
+                };
+                
+                function handleError(error) {
+                    if (attempt < retries) {
+                        attempt++;
+                        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+                        setTimeout(tryRequest, delay);
+                    } else {
+                        reject(error);
+                    }
+                }
+                
+                // Convert data object to form-encoded string
+                const formData = Object.keys(data).map(key => 
+                    encodeURIComponent(key) + '=' + encodeURIComponent(data[key])
+                ).join('&');
+                
+                xhr.send(formData);
+            }
+            
+            tryRequest();
+        });
     }
     
     /**
@@ -617,7 +696,6 @@
         })
         .catch(error => {
             if (error.name !== 'AbortError') {
-                console.error('Date filter error:', error);
                 const errorMessage = error.message || wpMixcloudArchives.filterErrorText || 'Failed to filter results. Please try again.';
                 showFilterMessage(container, errorMessage, 'error');
             }
@@ -761,7 +839,6 @@
             navigator.clipboard.writeText(url).then(function() {
                 showCopySuccess(button);
             }).catch(function(err) {
-                console.warn('Failed to copy to clipboard:', err);
                 fallbackCopyToClipboard(url, button);
             });
         } else {
@@ -794,7 +871,6 @@
                 showCopyError(button);
             }
         } catch (err) {
-            console.warn('Fallback copy failed:', err);
             showCopyError(button);
         }
         
