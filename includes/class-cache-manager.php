@@ -223,10 +223,6 @@ class WP_Mixcloud_Archives_Cache_Manager {
             
             return true;
         } catch (Exception $e) {
-            // AIDEV-NOTE: Log error for debugging
-            if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-                error_log('WP Mixcloud Archives: Failed to clear cache - ' . $e->getMessage());
-            }
             return false;
         }
     }

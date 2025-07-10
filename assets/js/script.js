@@ -19,33 +19,33 @@
             button.addEventListener('click', function(e) {
                 e.preventDefault();
                 const listItem = button.closest('.mixcloud-list-item');
-                const playerContainer = listItem.querySelector('.mixcloud-inline-player');
+                const waveformContainer = listItem.querySelector('.mixcloud-list-waveform');
                 const cloudcastUrl = button.getAttribute('data-cloudcast-url');
                 const cloudcastName = button.getAttribute('data-cloudcast-name');
                 const cloudcastKey = button.getAttribute('data-cloudcast-key');
                 
-                if (playerContainer && cloudcastUrl) {
-                    toggleInlinePlayer(listItem, playerContainer, cloudcastUrl, cloudcastName, cloudcastKey);
+                if (waveformContainer && cloudcastUrl && cloudcastKey) {
+                    toggleInlinePlayer(listItem, waveformContainer, cloudcastUrl, cloudcastName, cloudcastKey);
                 }
             });
         });
         
         // Function to toggle inline player
         function toggleInlinePlayer(listItem, container, url, name, key) {
-            const isCurrentlyOpen = container.style.display === 'block';
+            const hasPlayer = container.querySelector('iframe.mixcloud-player-iframe');
             
             // Close any currently open player
             if (currentlyPlaying && currentlyPlaying !== container) {
                 closeInlinePlayer(currentlyPlaying);
             }
             
-            if (isCurrentlyOpen) {
+            if (hasPlayer) {
                 // Close this player
                 closeInlinePlayer(container);
                 currentlyPlaying = null;
             } else {
                 // Open this player
-                openInlinePlayer(container, url, name);
+                openInlinePlayer(container, url, name, key);
                 currentlyPlaying = container;
                 
                 // Scroll to player if needed
@@ -59,14 +59,19 @@
         }
         
         // Open inline player
-        function openInlinePlayer(container, url, name) {
-            // Build embed URL - use the full URL as feed parameter
+        function openInlinePlayer(container, url, name, key) {
+            // Store original waveform content
+            const originalContent = container.innerHTML;
+            container.setAttribute('data-original-content', originalContent);
+            
+            // Build embed URL - use the cloudcast key as feed parameter
             const embedParams = {
-                feed: encodeURIComponent(url),
+                feed: encodeURIComponent(key),
                 hide_cover: '1',
                 mini: '1', // Use mini player
                 light: '0', // Dark theme player
-                hide_artwork: '1' // Hide artwork in player
+                hide_artwork: '1', // Hide artwork in player
+                hide_follow: '1' // Hide follow button for cleaner look
                 // Note: Removed autoplay for Safari compatibility
             };
             
@@ -76,18 +81,19 @@
             // Create iframe
             const iframe = document.createElement('iframe');
             iframe.src = embedUrl;
+            iframe.className = 'mixcloud-player-iframe';
             iframe.width = '100%';
-            iframe.height = '60'; // Reduced height for mini player
+            iframe.height = '60'; // Mini player height
             iframe.frameBorder = '0';
             iframe.allowFullscreen = true;
             iframe.title = 'Mixcloud player for ' + name;
             
-            // Clear container and add iframe
+            // Clear container and add iframe immediately
             container.innerHTML = '';
             container.appendChild(iframe);
+            container.classList.add('mixcloud-player-active');
             
-            // Show container with animation
-            container.style.display = 'block';
+            // Animate in
             container.style.opacity = '0';
             setTimeout(() => {
                 container.style.transition = 'opacity 0.3s ease';
@@ -99,8 +105,18 @@
         function closeInlinePlayer(container) {
             container.style.opacity = '0';
             setTimeout(() => {
-                container.style.display = 'none';
-                container.innerHTML = '';
+                // Restore original waveform content
+                const originalContent = container.getAttribute('data-original-content');
+                if (originalContent) {
+                    container.innerHTML = originalContent;
+                    container.removeAttribute('data-original-content');
+                }
+                
+                // Remove active class
+                container.classList.remove('mixcloud-player-active');
+                
+                // Reset opacity
+                container.style.opacity = '1';
             }, 300);
         }
     }
@@ -186,21 +202,55 @@
             
             function applyFilter(filter) {
                 const listItems = document.querySelectorAll('.mixcloud-list-item');
+                let matchCount = 0;
                 
                 listItems.forEach(item => {
                     const title = item.querySelector('.mixcloud-list-title').textContent;
-                    const cleanTitle = title.replace(/\s*[–-•]\s*\d{1,2}\/\d{1,2}\/\d{4}$/, '')        // MM/DD/YYYY or M/D/YYYY
-                                           .replace(/\s*[–-•]\s*\d{4}-\d{2}-\d{2}$/, '')             // YYYY-MM-DD
-                                           .replace(/\s*[–-•]\s*\d{1,2}-\d{1,2}-\d{4}$/, '')        // MM-DD-YYYY or M-D-YYYY
-                                           .trim();
+                    
+                    // RIGHT-TO-LEFT APPROACH: Work backwards from the end to find dates
+                    // Match the PHP implementation
+                    let cleanTitle = title;
+                    const separators = ['•', '–', '-', '|', ':'];
+                    let dateRemoved = false;
+                    
+                    for (const sep of separators) {
+                        if (dateRemoved) break;
+                        
+                        const lastPos = cleanTitle.lastIndexOf(sep);
+                        if (lastPos !== -1) {
+                            const beforeSep = cleanTitle.substring(0, lastPos).trim();
+                            const afterSep = cleanTitle.substring(lastPos + sep.length).trim();
+                            
+                            // Check if what's after the separator looks like a date
+                            const datePatterns = [
+                                /^(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])-(20\d{2}|19\d{2})$/,  // MM-DD-YYYY
+                                /^\d{1,2}\/\d{1,2}\/\d{2,4}$/,                                        // M/D/YY
+                                /^\d{4}-\d{1,2}-\d{1,2}$/,                                           // YYYY-MM-DD
+                                /^\d{1,2}\.\d{1,2}\.\d{2,4}$/,                                       // M.D.YY
+                                /^(0?[1-9]|1[0-2])–(0?[1-9]|[12][0-9]|3[01])-(20\d{2}|19\d{2})$/,  // MM–DD-YYYY
+                                /^(20\d{2}|19\d{2})$/                                                // Just year
+                            ];
+                            
+                            for (const pattern of datePatterns) {
+                                if (pattern.test(afterSep)) {
+                                    cleanTitle = beforeSep;
+                                    dateRemoved = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Normalize characters for consistent filtering - convert en dash and bullet to regular dash
+                    cleanTitle = cleanTitle.replace(/[–•]/g, '-');
                     
                     if (filter === 'all' || cleanTitle === filter) {
                         item.style.display = 'flex';
+                        matchCount++;
                     } else {
                         item.style.display = 'none';
                     }
                 });
-                
             }
             
             // Click events

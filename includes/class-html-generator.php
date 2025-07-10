@@ -89,13 +89,8 @@ class WP_Mixcloud_Archives_HTML_Generator {
         // Title and account info
         $html .= $this->generate_header_html($cloudcast, $options);
         
-        // Waveform placeholder
-        $html .= '<div class="mixcloud-list-waveform">';
-        $html .= '<div class="mixcloud-waveform-placeholder"></div>';
-        $html .= '</div>';
-        
-        // Duration
-        $html .= $this->generate_duration_html($cloudcast);
+        // Waveform area (empty by default, player appears here when activated)
+        $html .= '<div class="mixcloud-list-waveform"></div>';
         
         $html .= '</div>'; // .mixcloud-list-content
         
@@ -103,9 +98,6 @@ class WP_Mixcloud_Archives_HTML_Generator {
         if (!empty($options['show_social'])) {
             $html .= $this->generate_social_buttons_html($cloudcast);
         }
-        
-        // Inline player container (hidden by default)
-        $html .= '<div class="mixcloud-inline-player" style="display: none;"></div>';
         
         $html .= '</div>'; // .mixcloud-list-item
         
@@ -178,11 +170,19 @@ class WP_Mixcloud_Archives_HTML_Generator {
         $html .= esc_html($cloudcast['name']);
         $html .= '</h3>';
         
-        // Date and time
+        // Date and duration
         $date_display = $this->get_relative_date_display($cloudcast['created_time']);
+        $duration = '';
+        if (!empty($cloudcast['audio_length']) && $cloudcast['audio_length'] > 0) {
+            $duration = $this->format_duration($cloudcast['audio_length']);
+        }
         
         $html .= '<div class="mixcloud-list-subtitle">';
-        $html .= sprintf('%s • %s', esc_html($options['account']), esc_html($date_display));
+        if (!empty($duration)) {
+            $html .= sprintf('%s • %s', esc_html($duration), esc_html($date_display));
+        } else {
+            $html .= esc_html($date_display);
+        }
         $html .= '</div>';
         $html .= '</div>';
         
@@ -295,6 +295,7 @@ class WP_Mixcloud_Archives_HTML_Generator {
         $show_counts = $this->extract_show_counts($cloudcasts_data['data']);
         $total_count = count($cloudcasts_data['data']);
         
+        
         // Generate custom dropdown HTML
         $html = '<div class="mixcloud-filter-dropdown-container">';
         
@@ -317,7 +318,9 @@ class WP_Mixcloud_Archives_HTML_Generator {
         
         // Individual show options
         foreach ($show_counts as $title => $count) {
-            $html .= '<li class="mixcloud-dropdown-option" data-value="' . esc_attr($title) . '" role="option" aria-selected="false">';
+            // Normalize characters for consistent filtering - convert en dash and bullet to regular dash
+            $normalized_title = str_replace(['–', '•'], '-', $title);
+            $html .= '<li class="mixcloud-dropdown-option" data-value="' . esc_attr($normalized_title) . '" role="option" aria-selected="false">';
             $html .= sprintf('%s (%d)', esc_html($title), $count);
             $html .= '</li>';
         }
@@ -340,12 +343,70 @@ class WP_Mixcloud_Archives_HTML_Generator {
         $show_counts = array();
         
         foreach ($cloudcasts as $cloudcast) {
-            // Remove date patterns from titles
-            $title = $cloudcast['name'];
-            $title = preg_replace('/\s*[–-•]\s*\d{1,2}\/\d{1,2}\/\d{4}$/', '', $title);       // MM/DD/YYYY or M/D/YYYY
-            $title = preg_replace('/\s*[–-•]\s*\d{4}-\d{2}-\d{2}$/', '', $title);            // YYYY-MM-DD
-            $title = preg_replace('/\s*[–-•]\s*\d{1,2}-\d{1,2}-\d{4}$/', '', $title);        // MM-DD-YYYY or M-D-YYYY
+            $original_title = $cloudcast['name'];
+            $title = $original_title;
+            
+            // RIGHT-TO-LEFT APPROACH: Work backwards from the end to find dates
+            // This is much more reliable since dates are always at the end
+            
+            // Find the last position of common separators and check if what follows looks like a date
+            $separators = ['•', '–', '-', '|', ':'];
+            $date_removed = false;
+            
+            foreach ($separators as $sep) {
+                if ($date_removed) break;
+                
+                $last_pos = strrpos($title, $sep);
+                if ($last_pos !== false) {
+                    $before_sep = trim(substr($title, 0, $last_pos));
+                    $after_sep = trim(substr($title, $last_pos + strlen($sep)));
+                    
+                    // Check if what's after the separator looks like a date
+                    $date_patterns = [
+                        '/^(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])-(20\d{2}|19\d{2})$/',  // MM-DD-YYYY
+                        '/^\d{1,2}\/\d{1,2}\/\d{2,4}$/',                                        // M/D/YY
+                        '/^\d{4}-\d{1,2}-\d{1,2}$/',                                           // YYYY-MM-DD
+                        '/^\d{1,2}\.\d{1,2}\.\d{2,4}$/',                                       // M.D.YY
+                        '/^(0?[1-9]|1[0-2])–(0?[1-9]|[12][0-9]|3[01])-(20\d{2}|19\d{2})$/',  // MM–DD-YYYY
+                        '/^(20\d{2}|19\d{2})$/'                                                // Just year
+                    ];
+                    
+                    foreach ($date_patterns as $pattern) {
+                        if (preg_match($pattern, $after_sep)) {
+                            $title = $before_sep;
+                            $date_removed = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
             $title = trim($title);
+            
+            // Enhanced invisible character detection and cleanup
+            // Remove various Unicode whitespace and invisible characters
+            $title = preg_replace('/[\x{00A0}\x{1680}\x{2000}-\x{200B}\x{2028}\x{2029}\x{202F}\x{205F}\x{3000}\x{FEFF}\x{200C}\x{200D}]/u', '', $title);
+            $title = trim($title);
+            
+            // Skip empty titles or titles that are too short (likely just dates/numbers)
+            // Enhanced empty check for invisible characters
+            $is_empty_or_invisible = ($title === '' || strlen($title) < 3 || ctype_space($title) || 
+                                    preg_match('/^[\s\p{Z}\p{C}]*$/u', $title) || 
+                                    mb_strlen(trim($title), 'UTF-8') === 0);
+            
+            if ($is_empty_or_invisible) {
+                continue;
+            }
+            
+            // Double-check before adding to show_counts (safety net)
+            // Enhanced check for invisible characters
+            $is_still_empty = ($title === '' || strlen($title) < 3 || ctype_space($title) || 
+                             preg_match('/^[\s\p{Z}\p{C}]*$/u', $title) || 
+                             mb_strlen(trim($title), 'UTF-8') === 0);
+            
+            if ($is_still_empty) {
+                continue;
+            }
             
             if (!isset($show_counts[$title])) {
                 $show_counts[$title] = 0;
@@ -353,10 +414,40 @@ class WP_Mixcloud_Archives_HTML_Generator {
             $show_counts[$title]++;
         }
         
+        // Final cleanup: Remove any empty or invalid titles
+        $cleaned_show_counts = array();
+        foreach ($show_counts as $title => $count) {
+            $is_valid_title = ($title !== '' && strlen($title) >= 3 && !ctype_space($title) && 
+                             !preg_match('/^[\s\p{Z}\p{C}]*$/u', $title) && 
+                             mb_strlen(trim($title), 'UTF-8') >= 3);
+            
+            if ($is_valid_title) {
+                $cleaned_show_counts[$title] = $count;
+            }
+        }
+        
+        $show_counts = $cleaned_show_counts;
+        
         // Sort alphabetically
         ksort($show_counts);
         
-        return $show_counts;
+        // Consolidate entries with different separators (en dash, bullet, etc) into single menu items
+        $consolidated_counts = array();
+        foreach ($show_counts as $title => $count) {
+            // Create normalized key for grouping (convert en dash and bullet to regular dash)
+            $normalized_key = str_replace(['–', '•'], '-', $title);
+            
+            if (!isset($consolidated_counts[$normalized_key])) {
+                $consolidated_counts[$normalized_key] = $count;
+            } else {
+                $consolidated_counts[$normalized_key] += $count;
+            }
+        }
+        
+        // Sort consolidated results
+        ksort($consolidated_counts);
+        
+        return $consolidated_counts;
     }
     
     /**

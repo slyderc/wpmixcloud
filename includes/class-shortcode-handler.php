@@ -314,36 +314,8 @@ class WP_Mixcloud_Archives_Shortcode_Handler {
             'current_end_date'   => $atts['end_date'],
         );
         
-        // Generate main HTML content
+        // Generate and return HTML content
         $html_generator = $this->plugin->get_html_generator();
-        $html_output = $html_generator->generate_shortcode_html($cloudcasts_data, $atts['account'], $options);
-        
-        // Add debug info if requested
-        if (isset($_GET['debug_mixcloud']) && $_GET['debug_mixcloud'] === '1') {
-            $debug_info = $this->generate_debug_info($cloudcasts_data, $atts);
-            $html_output = $debug_info . $html_output;
-        }
-        
-        return $html_output;
-    }
-    
-    /**
-     * Generate debug information for troubleshooting
-     *
-     * @param array $cloudcasts_data Processed cloudcasts data
-     * @param array $atts            Validated attributes
-     * @return string                Debug HTML
-     */
-    private function generate_debug_info($cloudcasts_data, $atts) {
-        $debug_info = "<div style='background: #f0f0f0; padding: 10px; margin: 10px 0; border: 1px solid #ccc;'>";
-        $debug_info .= "<h4>Debug Info:</h4>";
-        $debug_info .= "<p><strong>Shows after API fetch:</strong> " . (isset($cloudcasts_data['data']) ? count($cloudcasts_data['data']) : 'No data') . "</p>";
-        $debug_info .= "<p><strong>Days parameter:</strong> " . $atts['days'] . "</p>";
-        $debug_info .= "<p><strong>Start date:</strong> " . ($atts['start_date'] ?: 'None') . "</p>";
-        $debug_info .= "<p><strong>End date:</strong> " . ($atts['end_date'] ?: 'None') . "</p>";
-        $debug_info .= "<p><strong>Has custom dates:</strong> " . (!empty($atts['start_date']) || !empty($atts['end_date']) ? 'YES' : 'NO') . "</p>";
-        $debug_info .= "</div>";
-        
-        return $debug_info;
+        return $html_generator->generate_shortcode_html($cloudcasts_data, $atts['account'], $options);
     }
 }

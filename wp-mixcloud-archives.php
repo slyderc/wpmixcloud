@@ -259,11 +259,6 @@ class WP_Mixcloud_Archives {
             // Clear cache if account or cache expiration changed
             if ($old_account !== $new_account || $old_cache_expiration !== $new_cache_expiration) {
                 $this->get_cache_manager()->clear_all_cache();
-                
-                // AIDEV-NOTE: Log cache clearing for debugging
-                if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-                    error_log('WP Mixcloud Archives: Cache cleared due to settings update');
-                }
             }
         }
     }
@@ -279,11 +274,6 @@ class WP_Mixcloud_Archives {
         // AIDEV-NOTE: Clear rate limiting transients to reset limits
         if (isset($this->components['ajax_handler'])) {
             $this->components['ajax_handler']->clear_rate_limit_data();
-        }
-        
-        // AIDEV-NOTE: Log deactivation for debugging purposes
-        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-            error_log('WP Mixcloud Archives deactivated at ' . current_time('mysql'));
         }
         
         // AIDEV-NOTE: Set deactivation timestamp but preserve settings for reactivation

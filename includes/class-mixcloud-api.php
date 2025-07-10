@@ -189,11 +189,6 @@ class Mixcloud_API_Handler {
             $offset += $page_size;
             $request_count++;
             
-            // AIDEV-NOTE: Debug logging for pagination
-        if (isset($_GET['debug_mixcloud']) && $_GET['debug_mixcloud'] === '1') {
-            error_log("Mixcloud Debug: Page $request_count - Fetched " . count($formatted_data['data']) . " shows, Total so far: " . count($all_cloudcasts));
-            error_log("Mixcloud Debug: Has next page: " . (!empty($paging_info['next']) ? 'YES' : 'NO'));
-        }
         
         // Continue if there are more results and we haven't hit our safety limit
         } while (!empty($paging_info['next']) && $request_count < $max_requests);
@@ -206,10 +201,6 @@ class Mixcloud_API_Handler {
             'fetched_at' => current_time('mysql'),
         );
         
-        // AIDEV-NOTE: Final debug log
-        if (isset($_GET['debug_mixcloud']) && $_GET['debug_mixcloud'] === '1') {
-            error_log("Mixcloud Debug: FINAL RESULT - Total shows: " . count($all_cloudcasts) . " in $request_count requests");
-        }
         
         // Cache the complete result
         set_transient($cache_key, $result, self::CACHE_EXPIRATION);
@@ -747,10 +738,6 @@ class Mixcloud_API_Handler {
         $log_key = 'mixcloud_api_error_' . time() . '_' . rand(1000, 9999);
         set_transient($log_key, $log_data, WEEK_IN_SECONDS);
         
-        // Also log to error_log if WP_DEBUG_LOG is enabled
-        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-            error_log('WP Mixcloud Archives API Error: ' . wp_json_encode($log_data));
-        }
     }
     
     /**
@@ -771,9 +758,6 @@ class Mixcloud_API_Handler {
             'attempts'  => $attempt,
         );
         
-        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-            error_log('WP Mixcloud Archives API Success: ' . wp_json_encode($log_data));
-        }
     }
     
     /**
@@ -864,10 +848,6 @@ class Mixcloud_API_Handler {
             $open_until = time() + self::CIRCUIT_BREAKER_TIMEOUT;
             set_transient('mixcloud_api_circuit_open_until', $open_until, self::CIRCUIT_BREAKER_TIMEOUT);
             
-            // Log circuit breaker activation
-            if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-                error_log(sprintf('WP Mixcloud Archives: Circuit breaker opened due to %d consecutive failures', $failure_count));
-            }
         }
     }
     
