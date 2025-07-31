@@ -214,25 +214,7 @@ class WP_Mixcloud_Archives_HTML_Generator {
         }
     }
     
-    /**
-     * Generate duration HTML
-     *
-     * @param array $cloudcast Cloudcast data
-     * @return string          Duration HTML
-     */
-    private function generate_duration_html($cloudcast) {
-        if (empty($cloudcast['audio_length']) || $cloudcast['audio_length'] <= 0) {
-            return '';
-        }
-        
-        $duration = $this->format_duration($cloudcast['audio_length']);
-        
-        $html = '<div class="mixcloud-list-duration">';
-        $html .= esc_html($duration);
-        $html .= '</div>';
-        
-        return $html;
-    }
+    /* Removed unused generate_duration_html() method - duration now handled in generate_metadata_html() */
     
     /**
      * Format duration from seconds
@@ -480,78 +462,7 @@ class WP_Mixcloud_Archives_HTML_Generator {
         return $html;
     }
     
-    /**
-     * Generate embedded player HTML
-     *
-     * @param array $cloudcast Cloudcast data
-     * @param array $options   Display options
-     * @return string          Player HTML
-     */
-    public function generate_player_html($cloudcast, $options = array()) {
-        // Default options
-        $defaults = array(
-            'lazy_load'   => true,
-            'mini_player' => true,
-        );
-        $options = wp_parse_args($options, $defaults);
-        
-        // AIDEV-NOTE: Mixcloud embed parameters for better player experience
-        $embed_params = array(
-            'hide_cover'    => 1,
-            'mini'          => $options['mini_player'] ? 1 : 0,
-            'light'         => 1,
-            'hide_artwork'  => 0,
-            'autoplay'      => 0,
-        );
-        
-        // Build embed URL
-        $base_embed_url = str_replace('https://www.mixcloud.com/', 'https://www.mixcloud.com/widget/iframe/?feed=', $cloudcast['url']);
-        $embed_url = add_query_arg($embed_params, $base_embed_url);
-        
-        // AIDEV-NOTE: Implement lazy loading with data-src for performance
-        if ($options['lazy_load']) {
-            $player_html = sprintf(
-                '<div class="mixcloud-player-wrapper" data-cloudcast-key="%s">
-                    <button class="mixcloud-player-load-btn" type="button" aria-label="%s">
-                        <span class="dashicons dashicons-controls-play"></span>
-                        %s
-                    </button>
-                    <iframe 
-                        width="100%%" 
-                        height="60" 
-                        data-src="%s" 
-                        frameborder="0" 
-                        class="mixcloud-player mixcloud-player-lazy"
-                        allowfullscreen
-                        title="%s"
-                        loading="lazy">
-                    </iframe>
-                </div>',
-                esc_attr($cloudcast['key']),
-                esc_attr(sprintf(__('Load player for %s', 'wp-mixcloud-archives'), $cloudcast['name'])),
-                esc_html__('Load Player', 'wp-mixcloud-archives'),
-                esc_url($embed_url),
-                esc_attr(sprintf(__('Mixcloud player for %s', 'wp-mixcloud-archives'), $cloudcast['name']))
-            );
-        } else {
-            // Direct loading without lazy load
-            $player_html = sprintf(
-                '<iframe 
-                    width="100%%" 
-                    height="60" 
-                    src="%s" 
-                    frameborder="0" 
-                    class="mixcloud-player"
-                    allowfullscreen
-                    title="%s">
-                </iframe>',
-                esc_url($embed_url),
-                esc_attr(sprintf(__('Mixcloud player for %s', 'wp-mixcloud-archives'), $cloudcast['name']))
-            );
-        }
-        
-        return $player_html;
-    }
+    /* Removed unused generate_player_html() method - plugin now uses modal players only */
     
     /**
      * Generate user-friendly error message

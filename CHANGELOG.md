@@ -5,6 +5,23 @@ All notable changes to the WP Mixcloud Archives plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-01-31
+
+### Changed
+- Significant codebase cleanup and optimization
+- Removed duplicate CSS definitions and unused styles
+- Streamlined JavaScript initialization strategies
+- Cleaned up unused PHP methods in HTML generator
+- Reduced asset sizes by 33.1% (CSS) and 60.7% (JavaScript)
+- Improved code maintainability and performance
+
+### Removed
+- Unused card/grid layout styles (plugin uses list layout only)
+- Duplicate social button and modal style definitions
+- Excessive debug logging statements
+- Redundant event handling code
+- Unused `generate_duration_html()` and `generate_player_html()` methods
+
 ## [1.1.0] - 2025-01-31
 
 ### Added

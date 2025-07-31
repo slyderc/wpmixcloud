@@ -3,7 +3,7 @@
  * Plugin Name: WP Mixcloud Archives
  * Plugin URI: https://github.com/slyderc/wpmixcloud
  * Description: A WordPress plugin to display Mixcloud archives with embedded players, supporting date filtering, pagination, and social sharing.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Now Wave Radio, LLC
  * Author URI: https://nowwave.radio
  * License: MIT with Attribution
@@ -30,7 +30,7 @@ if (defined('WP_MIXCLOUD_ARCHIVES_VERSION') && class_exists('WP_Mixcloud_Archive
 
 // AIDEV-NOTE: Define plugin constants for paths and URLs with guards to prevent redefinition
 if (!defined('WP_MIXCLOUD_ARCHIVES_VERSION')) {
-    define('WP_MIXCLOUD_ARCHIVES_VERSION', '1.1.0');
+    define('WP_MIXCLOUD_ARCHIVES_VERSION', '1.1.1');
 }
 if (!defined('WP_MIXCLOUD_ARCHIVES_PLUGIN_FILE')) {
     define('WP_MIXCLOUD_ARCHIVES_PLUGIN_FILE', __FILE__);

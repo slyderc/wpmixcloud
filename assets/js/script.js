@@ -28,11 +28,7 @@
         $(document).off('click.wpmixcloud', '.mixcloud-modal-close');
         $(document).off('click.wpmixcloud', '.mixcloud-modal-overlay');
         
-        // Debug: Log how many play buttons are found
-        var playButtons = $('.mixcloud-play-button');
-        if (window.console && window.console.log) {
-            console.log('WP Mixcloud Archives: Found ' + playButtons.length + ' play buttons');
-        }
+        // AIDEV-NOTE: Clean initialization without debug output
         
         // Attach play button handler with better event handling
         $(document).on('click.wpmixcloud', '.mixcloud-play-button', function(e) {
@@ -40,18 +36,10 @@
             e.stopPropagation();
             e.stopImmediatePropagation();
             
-            if (window.console && window.console.log) {
-                console.log('WP Mixcloud Archives: Play button clicked');
-            }
-            
-            const button = this;
-            const $button = $(button);
+            const $button = $(this);
             
             // Ensure button is not disabled
             if ($button.hasClass('disabled') || $button.prop('disabled')) {
-                if (window.console && window.console.log) {
-                    console.log('WP Mixcloud Archives: Button is disabled, ignoring click');
-                }
                 return false;
             }
             
@@ -60,16 +48,8 @@
             const cloudcastKey = $button.attr('data-cloudcast-key') || $button.data('cloudcast-key');
             const cloudcastImage = $button.attr('data-cloudcast-image') || $button.data('cloudcast-image');
             
-            if (window.console && window.console.log) {
-                console.log('WP Mixcloud Archives: Button data - Key:', cloudcastKey, 'URL:', cloudcastUrl);
-            }
-            
             if (cloudcastUrl && cloudcastKey) {
                 openPlayerModal(cloudcastUrl, cloudcastName, cloudcastKey, cloudcastImage);
-            } else {
-                if (window.console && window.console.log) {
-                    console.log('WP Mixcloud Archives: Missing required data attributes');
-                }
             }
             
             return false;
@@ -325,38 +305,25 @@
     }
 
     /**
-     * Initialize immediately and handle various loading scenarios
+     * Initialize plugin functionality
      */
     function initializePlugin() {
         initMixcloudPlayers();
         initFilters();
     }
     
-    // Multiple initialization strategies to ensure the plugin works
-    // 1. Immediate execution (in case DOM is already ready)
+    // AIDEV-NOTE: Streamlined initialization strategy
+    // Primary initialization
     if (document.readyState === 'loading') {
-        // DOM is still loading
         $(document).ready(initializePlugin);
     } else {
-        // DOM is already ready
         initializePlugin();
     }
     
-    // 2. DOM ready event (standard)
-    $(document).ready(initializePlugin);
-    
-    // 3. Window load event (everything including images loaded)
-    $(window).on('load', initializePlugin);
-    
-    // 4. Delayed initialization to catch late-loaded content
-    setTimeout(initializePlugin, 100);
-    setTimeout(initializePlugin, 500);
-    setTimeout(initializePlugin, 1000);
-    
-    // 5. Watch for AJAX content updates
+    // Secondary initialization for dynamic content
     $(document).on('wp-mixcloud-refresh', initializePlugin);
     
-    // 6. Watch for DOM mutations (dynamically added content)
+    // Watch for dynamically added content
     if (window.MutationObserver) {
         var observer = new MutationObserver(function(mutations) {
             var shouldReinit = false;
@@ -374,7 +341,6 @@
             }
         });
         
-        // Start observing when DOM is ready
         $(document).ready(function() {
             if (document.body) {
                 observer.observe(document.body, {
@@ -385,12 +351,7 @@
         });
     }
     
-    // 7. Global refresh function for external use
+    // Global refresh function for external use
     window.wpMixcloudArchivesRefresh = initializePlugin;
-    
-    // 8. Force initialization on any user interaction (failsafe)
-    $(document).one('click touchstart', function() {
-        setTimeout(initializePlugin, 50);
-    });
 
 })(jQuery);
