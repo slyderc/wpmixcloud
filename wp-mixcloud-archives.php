@@ -3,7 +3,7 @@
  * Plugin Name: WP Mixcloud Archives
  * Plugin URI: https://github.com/slyderc/wpmixcloud
  * Description: A WordPress plugin to display Mixcloud archives with embedded players, supporting date filtering, pagination, and social sharing.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Now Wave Radio, LLC
  * Author URI: https://nowwave.radio
  * License: MIT with Attribution
@@ -23,26 +23,59 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// AIDEV-NOTE: Define plugin constants for paths and URLs
-define('WP_MIXCLOUD_ARCHIVES_VERSION', '1.0.0');
-define('WP_MIXCLOUD_ARCHIVES_PLUGIN_FILE', __FILE__);
-define('WP_MIXCLOUD_ARCHIVES_PLUGIN_DIR', plugin_dir_path(__FILE__));
-define('WP_MIXCLOUD_ARCHIVES_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR', WP_MIXCLOUD_ARCHIVES_PLUGIN_DIR . 'includes/');
-define('WP_MIXCLOUD_ARCHIVES_ADMIN_DIR', WP_MIXCLOUD_ARCHIVES_PLUGIN_DIR . 'admin/');
-define('WP_MIXCLOUD_ARCHIVES_ASSETS_DIR', WP_MIXCLOUD_ARCHIVES_PLUGIN_DIR . 'assets/');
-define('WP_MIXCLOUD_ARCHIVES_TEMPLATES_DIR', WP_MIXCLOUD_ARCHIVES_PLUGIN_DIR . 'templates/');
+// AIDEV-NOTE: Prevent duplicate loading if already loaded
+if (defined('WP_MIXCLOUD_ARCHIVES_VERSION') && class_exists('WP_Mixcloud_Archives')) {
+    return;
+}
 
-// AIDEV-NOTE: Include required classes
-require_once WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR . 'class-mixcloud-api.php';
-require_once WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR . 'class-shortcode-handler.php';
-require_once WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR . 'class-ajax-handler.php';
-require_once WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR . 'class-html-generator.php';
-require_once WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR . 'class-cache-manager.php';
-require_once WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR . 'class-assets-manager.php';
+// AIDEV-NOTE: Define plugin constants for paths and URLs with guards to prevent redefinition
+if (!defined('WP_MIXCLOUD_ARCHIVES_VERSION')) {
+    define('WP_MIXCLOUD_ARCHIVES_VERSION', '1.1.0');
+}
+if (!defined('WP_MIXCLOUD_ARCHIVES_PLUGIN_FILE')) {
+    define('WP_MIXCLOUD_ARCHIVES_PLUGIN_FILE', __FILE__);
+}
+if (!defined('WP_MIXCLOUD_ARCHIVES_PLUGIN_DIR')) {
+    define('WP_MIXCLOUD_ARCHIVES_PLUGIN_DIR', plugin_dir_path(__FILE__));
+}
+if (!defined('WP_MIXCLOUD_ARCHIVES_PLUGIN_URL')) {
+    define('WP_MIXCLOUD_ARCHIVES_PLUGIN_URL', plugin_dir_url(__FILE__));
+}
+if (!defined('WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR')) {
+    define('WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR', WP_MIXCLOUD_ARCHIVES_PLUGIN_DIR . 'includes/');
+}
+if (!defined('WP_MIXCLOUD_ARCHIVES_ADMIN_DIR')) {
+    define('WP_MIXCLOUD_ARCHIVES_ADMIN_DIR', WP_MIXCLOUD_ARCHIVES_PLUGIN_DIR . 'admin/');
+}
+if (!defined('WP_MIXCLOUD_ARCHIVES_ASSETS_DIR')) {
+    define('WP_MIXCLOUD_ARCHIVES_ASSETS_DIR', WP_MIXCLOUD_ARCHIVES_PLUGIN_DIR . 'assets/');
+}
+if (!defined('WP_MIXCLOUD_ARCHIVES_TEMPLATES_DIR')) {
+    define('WP_MIXCLOUD_ARCHIVES_TEMPLATES_DIR', WP_MIXCLOUD_ARCHIVES_PLUGIN_DIR . 'templates/');
+}
+
+// AIDEV-NOTE: Include required classes with guards to prevent redefinition
+if (!class_exists('Mixcloud_API')) {
+    require_once WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR . 'class-mixcloud-api.php';
+}
+if (!class_exists('Shortcode_Handler')) {
+    require_once WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR . 'class-shortcode-handler.php';
+}
+if (!class_exists('AJAX_Handler')) {
+    require_once WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR . 'class-ajax-handler.php';
+}
+if (!class_exists('HTML_Generator')) {
+    require_once WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR . 'class-html-generator.php';
+}
+if (!class_exists('Cache_Manager')) {
+    require_once WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR . 'class-cache-manager.php';
+}
+if (!class_exists('Assets_Manager')) {
+    require_once WP_MIXCLOUD_ARCHIVES_INCLUDES_DIR . 'class-assets-manager.php';
+}
 
 // AIDEV-NOTE: Include admin class only in admin area for performance
-if (is_admin()) {
+if (is_admin() && !class_exists('WP_Mixcloud_Archives_Admin')) {
     require_once WP_MIXCLOUD_ARCHIVES_ADMIN_DIR . 'class-wp-mixcloud-archives-admin.php';
 }
 
@@ -51,6 +84,7 @@ if (is_admin()) {
  * 
  * Coordinates between component classes and manages plugin lifecycle
  */
+if (!class_exists('WP_Mixcloud_Archives')) {
 class WP_Mixcloud_Archives {
     
     /**
@@ -294,6 +328,9 @@ class WP_Mixcloud_Archives {
         return $this->get_cache_manager()->get_cached_fallback_data($username);
     }
 }
+} // End class_exists check
 
-// AIDEV-NOTE: Initialize plugin instance
-WP_Mixcloud_Archives::get_instance();
+// AIDEV-NOTE: Initialize plugin instance only if class exists
+if (class_exists('WP_Mixcloud_Archives')) {
+    WP_Mixcloud_Archives::get_instance();
+}

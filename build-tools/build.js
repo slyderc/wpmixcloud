@@ -89,7 +89,10 @@ const CONFIG = {
             '.roo/**/*',
             '.windsurf/**/*',
             '.clinerules/**/*',
-            '.trae/**/*'
+            '.trae/**/*',
+            // Exclude source files - only include minified versions
+            'assets/css/style.css',
+            'assets/js/script.js'
         ]
     }
 };

@@ -1,5 +1,5 @@
 /**
- * WP Mixcloud Archives - Frontend Scripts (Production Fix)
+ * WP Mixcloud Archives - Frontend Scripts (Modal Player)
  *
  * @package WPMixcloudArchives
  */
@@ -14,128 +14,172 @@
         return;
     }
 
-    // Store current player reference globally within plugin scope
-    var currentlyPlaying = null;
+    // Store current modal and player reference
+    var currentModal = null;
+    var currentPlayer = null;
 
     /**
-     * Initialize Mixcloud inline player functionality
+     * Initialize Mixcloud modal player functionality
      */
     function initMixcloudPlayers() {
         // AIDEV-NOTE: Use event delegation for dynamic content and theme compatibility
         // Remove any existing handlers to prevent duplicates
         $(document).off('click.wpmixcloud', '.mixcloud-play-button');
+        $(document).off('click.wpmixcloud', '.mixcloud-modal-close');
+        $(document).off('click.wpmixcloud', '.mixcloud-modal-overlay');
         
-        // Attach new handler with namespace
+        // Debug: Log how many play buttons are found
+        var playButtons = $('.mixcloud-play-button');
+        if (window.console && window.console.log) {
+            console.log('WP Mixcloud Archives: Found ' + playButtons.length + ' play buttons');
+        }
+        
+        // Attach play button handler with better event handling
         $(document).on('click.wpmixcloud', '.mixcloud-play-button', function(e) {
             e.preventDefault();
-            e.stopPropagation(); // AIDEV-NOTE: Prevent theme event conflicts
-            e.stopImmediatePropagation(); // AIDEV-NOTE: Stop all other handlers
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            if (window.console && window.console.log) {
+                console.log('WP Mixcloud Archives: Play button clicked');
+            }
             
             const button = this;
-            const $listItem = $(button).closest('.mixcloud-list-item');
-            const $waveformContainer = $listItem.find('.mixcloud-list-waveform').first();
-            const cloudcastUrl = $(button).attr('data-cloudcast-url');
-            const cloudcastName = $(button).attr('data-cloudcast-name');
-            const cloudcastKey = $(button).attr('data-cloudcast-key');
+            const $button = $(button);
             
-            if ($waveformContainer.length && cloudcastUrl && cloudcastKey) {
-                toggleInlinePlayer($listItem[0], $waveformContainer[0], cloudcastUrl, cloudcastName, cloudcastKey);
+            // Ensure button is not disabled
+            if ($button.hasClass('disabled') || $button.prop('disabled')) {
+                if (window.console && window.console.log) {
+                    console.log('WP Mixcloud Archives: Button is disabled, ignoring click');
+                }
+                return false;
             }
             
-            return false; // Extra safety
+            const cloudcastUrl = $button.attr('data-cloudcast-url') || $button.data('cloudcast-url');
+            const cloudcastName = $button.attr('data-cloudcast-name') || $button.data('cloudcast-name');
+            const cloudcastKey = $button.attr('data-cloudcast-key') || $button.data('cloudcast-key');
+            const cloudcastImage = $button.attr('data-cloudcast-image') || $button.data('cloudcast-image');
+            
+            if (window.console && window.console.log) {
+                console.log('WP Mixcloud Archives: Button data - Key:', cloudcastKey, 'URL:', cloudcastUrl);
+            }
+            
+            if (cloudcastUrl && cloudcastKey) {
+                openPlayerModal(cloudcastUrl, cloudcastName, cloudcastKey, cloudcastImage);
+            } else {
+                if (window.console && window.console.log) {
+                    console.log('WP Mixcloud Archives: Missing required data attributes');
+                }
+            }
+            
+            return false;
         });
         
-        // Function to toggle inline player
-        function toggleInlinePlayer(listItem, container, url, name, key) {
-            const hasPlayer = container.querySelector('iframe.mixcloud-player-iframe');
-            
-            // Close any currently open player
-            if (currentlyPlaying && currentlyPlaying !== container) {
-                closeInlinePlayer(currentlyPlaying);
-            }
-            
-            if (hasPlayer) {
-                // Close this player
-                closeInlinePlayer(container);
-                currentlyPlaying = null;
-            } else {
-                // Open this player
-                openInlinePlayer(container, url, name, key);
-                currentlyPlaying = container;
-                
-                // Scroll to player if needed
-                setTimeout(() => {
-                    const rect = listItem.getBoundingClientRect();
-                    if (rect.bottom > window.innerHeight) {
-                        listItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }, 100);
-            }
-        }
+        // Attach modal close handlers
+        $(document).on('click.wpmixcloud', '.mixcloud-modal-close', function(e) {
+            e.preventDefault();
+            closePlayerModal();
+            return false;
+        });
         
-        // Open inline player
-        function openInlinePlayer(container, url, name, key) {
-            // Store original waveform content
-            const originalContent = container.innerHTML;
-            container.setAttribute('data-original-content', originalContent);
-            
-            // Build embed URL - use the cloudcast key as feed parameter
-            const embedParams = {
-                feed: encodeURIComponent(key),
-                hide_cover: '1',
-                mini: '1', // Use mini player
-                light: '0', // Dark theme player
-                hide_artwork: '1', // Hide artwork in player
-                hide_follow: '1' // Hide follow button for cleaner look
-                // Note: Removed autoplay for Safari compatibility
-            };
-            
-            const paramString = Object.keys(embedParams).map(key => key + '=' + embedParams[key]).join('&');
-            const embedUrl = 'https://www.mixcloud.com/widget/iframe/?' + paramString;
-            
-            // Create iframe
-            const iframe = document.createElement('iframe');
-            iframe.src = embedUrl;
-            iframe.className = 'mixcloud-player-iframe';
-            iframe.width = '100%';
-            iframe.height = '60'; // Mini player height
-            iframe.frameBorder = '0';
-            iframe.allowFullscreen = true;
-            iframe.title = 'Mixcloud player for ' + name;
-            
-            // Clear container and add iframe immediately
-            container.innerHTML = '';
-            container.appendChild(iframe);
-            container.classList.add('mixcloud-player-active');
-            
-            // Animate in
-            container.style.opacity = '0';
-            setTimeout(() => {
-                container.style.transition = 'opacity 0.3s ease';
-                container.style.opacity = '1';
-            }, 10);
-        }
+        $(document).on('click.wpmixcloud', '.mixcloud-modal-overlay', function(e) {
+            e.preventDefault();
+            closePlayerModal();
+            return false;
+        });
         
-        // Close inline player
-        function closeInlinePlayer(container) {
-            container.style.opacity = '0';
-            setTimeout(() => {
-                // Restore original waveform content
-                const originalContent = container.getAttribute('data-original-content');
-                if (originalContent) {
-                    container.innerHTML = originalContent;
-                    container.removeAttribute('data-original-content');
-                }
-                
-                // Remove active class
-                container.classList.remove('mixcloud-player-active');
-                
-                // Reset opacity
-                container.style.opacity = '1';
-            }, 300);
-        }
+        // Close modal on Escape key
+        $(document).on('keydown.wpmixcloud', function(e) {
+            if (e.key === 'Escape' && currentModal) {
+                closePlayerModal();
+            }
+        });
     }
-
+    
+    /**
+     * Open player modal with Mixcloud iframe
+     */
+    function openPlayerModal(url, name, key, imageUrl) {
+        const modal = $('#mixcloud-player-modal');
+        if (!modal.length) {
+            console.error('WP Mixcloud Archives: Modal container not found');
+            return;
+        }
+        
+        // Close any existing modal first
+        if (currentModal) {
+            closePlayerModal();
+        }
+        
+        // Set up modal image
+        const modalImage = modal.find('.mixcloud-modal-image');
+        if (imageUrl && imageUrl !== '') {
+            modalImage.attr('src', imageUrl).attr('alt', name || 'Show artwork');
+        } else {
+            // Use fallback or hide image container
+            modalImage.attr('src', '').attr('alt', '');
+        }
+        
+        // Build embed URL - show mini player with controls
+        const embedParams = {
+            feed: encodeURIComponent(key),
+            mini: '1', // Use mini player
+            light: '0', // Dark theme player
+            hide_cover: '1', // Hide cover in player since we show it separately
+            hide_artwork: '1' // Hide artwork in player
+        };
+        
+        const paramString = Object.keys(embedParams).map(key => key + '=' + embedParams[key]).join('&');
+        const embedUrl = 'https://www.mixcloud.com/widget/iframe/?' + paramString;
+        
+        // Create iframe
+        const iframe = $('<iframe>')
+            .attr('src', embedUrl)
+            .attr('width', '100%')
+            .attr('height', '120')
+            .attr('frameborder', '0')
+            .attr('allowfullscreen', true)
+            .attr('title', 'Mixcloud player for ' + (name || 'show'));
+        
+        // Insert iframe into modal
+        const playerContainer = modal.find('.mixcloud-modal-player-container');
+        playerContainer.empty().append(iframe);
+        
+        // Show modal
+        modal.addClass('active');
+        currentModal = modal;
+        currentPlayer = iframe[0];
+        
+        // Prevent body scroll
+        $('body').addClass('mixcloud-modal-open');
+        
+        // Focus management for accessibility
+        modal.attr('tabindex', '-1').focus();
+    }
+    
+    /**
+     * Close player modal and stop playback
+     */
+    function closePlayerModal() {
+        if (!currentModal) return;
+        
+        // Stop player by removing iframe
+        if (currentPlayer) {
+            $(currentPlayer).remove();
+            currentPlayer = null;
+        }
+        
+        // Hide modal
+        currentModal.removeClass('active');
+        currentModal = null;
+        
+        // Restore body scroll
+        $('body').removeClass('mixcloud-modal-open');
+        
+        // Return focus to the page
+        $(document).focus();
+    }
+    
     /**
      * Initialize filter functionality with better event handling
      */
@@ -147,632 +191,206 @@
         $(document).on('click.wpmixcloud-dropdown', '.mixcloud-dropdown-selected', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            e.stopImmediatePropagation();
             
             const $dropdown = $(this).closest('.mixcloud-custom-dropdown');
-            const $selected = $(this);
             const $options = $dropdown.find('.mixcloud-dropdown-options');
-            const isOpen = $selected.attr('aria-expanded') === 'true';
+            const isOpen = $dropdown.hasClass('open');
             
-            if (isOpen) {
-                closeDropdown($selected, $options);
+            // Close all other dropdowns first
+            $('.mixcloud-custom-dropdown').removeClass('open');
+            $('.mixcloud-dropdown-options').hide();
+            
+            if (!isOpen) {
+                $dropdown.addClass('open');
+                $options.show();
+                
+                // Update ARIA attributes
+                $(this).attr('aria-expanded', 'true');
+                $options.attr('aria-hidden', 'false');
             } else {
-                openDropdown($selected, $options);
+                $(this).attr('aria-expanded', 'false');
+                $options.attr('aria-hidden', 'true');
             }
-            
-            return false;
         });
         
-        // Handle option clicks
+        // Handle option selection
         $(document).on('click.wpmixcloud-dropdown', '.mixcloud-dropdown-option', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            e.stopImmediatePropagation();
             
             const $option = $(this);
             const $dropdown = $option.closest('.mixcloud-custom-dropdown');
             const $selected = $dropdown.find('.mixcloud-dropdown-selected');
             const $options = $dropdown.find('.mixcloud-dropdown-options');
-            const $text = $dropdown.find('.mixcloud-dropdown-text');
-            
-            selectOption($option, $dropdown, $selected, $options, $text);
-            
-            return false;
-        });
-        
-        // Close dropdowns on outside click
-        $(document).on('click.wpmixcloud-outside', function(e) {
-            if (!$(e.target).closest('.mixcloud-custom-dropdown').length) {
-                $('.mixcloud-dropdown-selected[aria-expanded="true"]').each(function() {
-                    const $selected = $(this);
-                    const $options = $selected.siblings('.mixcloud-dropdown-options');
-                    closeDropdown($selected, $options);
-                });
-            }
-        });
-        
-        function openDropdown($selected, $options) {
-            $selected.attr('aria-expanded', 'true');
-            $options.addClass('mixcloud-dropdown-open');
-            
-            // Focus first option
-            const $firstOption = $options.find('.mixcloud-dropdown-option').first();
-            if ($firstOption.length) {
-                $firstOption.focus();
-            }
-        }
-        
-        function closeDropdown($selected, $options) {
-            $selected.attr('aria-expanded', 'false');
-            $options.removeClass('mixcloud-dropdown-open');
-            $selected.focus();
-        }
-        
-        function selectOption($option, $dropdown, $selected, $options, $text) {
-            const value = $option.attr('data-value');
-            const optionText = $option.text();
+            const value = $option.data('value');
+            const text = $option.text();
             
             // Update selected display
-            $text.text(optionText);
-            
-            // Update active state
-            $dropdown.find('.mixcloud-dropdown-option').removeClass('mixcloud-dropdown-option-active').attr('aria-selected', 'false');
-            $option.addClass('mixcloud-dropdown-option-active').attr('aria-selected', 'true');
-            
-            // Update data attribute
+            $selected.find('.mixcloud-dropdown-text').text(text);
             $dropdown.attr('data-current-filter', value);
             
-            // Apply filter
-            applyFilter(value);
+            // Update active option
+            $options.find('.mixcloud-dropdown-option').removeClass('mixcloud-dropdown-option-active').attr('aria-selected', 'false');
+            $option.addClass('mixcloud-dropdown-option-active').attr('aria-selected', 'true');
             
             // Close dropdown
-            closeDropdown($selected, $options);
-        }
-        
-        function applyFilter(filter) {
-            const listItems = document.querySelectorAll('.mixcloud-list-item');
-            let matchCount = 0;
+            $dropdown.removeClass('open');
+            $options.hide();
+            $selected.attr('aria-expanded', 'false');
+            $options.attr('aria-hidden', 'true');
             
-            listItems.forEach(item => {
-                const title = item.querySelector('.mixcloud-list-title').textContent;
-                
-                // RIGHT-TO-LEFT APPROACH: Work backwards from the end to find dates
-                // Match the PHP implementation
-                let cleanTitle = title;
-                const separators = ['•', '–', '-', '|', ':'];
-                let dateRemoved = false;
-                
-                for (const sep of separators) {
-                    if (dateRemoved) break;
-                    
-                    const lastPos = cleanTitle.lastIndexOf(sep);
-                    if (lastPos !== -1) {
-                        const beforeSep = cleanTitle.substring(0, lastPos).trim();
-                        const afterSep = cleanTitle.substring(lastPos + sep.length).trim();
-                        
-                        // Check if what's after the separator looks like a date
-                        const datePatterns = [
-                            /^(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])-(20\d{2}|19\d{2})$/,  // MM-DD-YYYY
-                            /^\d{1,2}\/\d{1,2}\/\d{2,4}$/,                                        // M/D/YY
-                            /^\d{4}-\d{1,2}-\d{1,2}$/,                                           // YYYY-MM-DD
-                            /^\d{1,2}\.\d{1,2}\.\d{2,4}$/,                                       // M.D.YY
-                            /^(0?[1-9]|1[0-2])–(0?[1-9]|[12][0-9]|3[01])-(20\d{2}|19\d{2})$/,  // MM–DD-YYYY
-                            /^(20\d{2}|19\d{2})$/                                                // Just year
-                        ];
-                        
-                        for (const pattern of datePatterns) {
-                            if (pattern.test(afterSep)) {
-                                cleanTitle = beforeSep;
-                                dateRemoved = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                // Normalize characters for consistent filtering - convert en dash and bullet to regular dash
-                cleanTitle = cleanTitle.replace(/[–•]/g, '-');
-                
-                if (filter === 'all' || cleanTitle === filter) {
-                    item.style.display = 'flex';
-                    matchCount++;
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        }
-    }
-
-    /**
-     * Handle table responsiveness
-     */
-    function handleTableResponsiveness() {
-        const tables = document.querySelectorAll('.mixcloud-archives-table');
-        
-        tables.forEach(function(table) {
-            // Add data-label attributes for mobile view
-            const headers = table.querySelectorAll('thead th');
-            const rows = table.querySelectorAll('tbody tr');
-            
-            rows.forEach(function(row) {
-                const cells = row.querySelectorAll('td');
-                cells.forEach(function(cell, index) {
-                    if (headers[index]) {
-                        cell.setAttribute('data-label', headers[index].textContent);
-                    }
-                });
-            });
+            // Apply filter
+            applyShowFilter(value);
         });
-    }
-
-    /**
-     * Initialize play count animations
-     */
-    function initPlayCountAnimations() {
-        const stats = document.querySelectorAll('.mixcloud-stats');
         
-        if ('IntersectionObserver' in window) {
-            const statsObserver = new IntersectionObserver(function(entries) {
-                entries.forEach(function(entry) {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('mixcloud-stats-visible');
-                    }
-                });
-            }, {
-                threshold: 0.5
-            });
-
-            stats.forEach(function(stat) {
-                statsObserver.observe(stat);
-            });
-        }
-    }
-
-    /**
-     * Initialize lazy loading for artwork images
-     */
-    function initLazyLoadingImages() {
-        const lazyImages = document.querySelectorAll('.mixcloud-artwork[data-src]');
-        
-        if (lazyImages.length === 0) {
-            return;
-        }
-
-        if ('IntersectionObserver' in window) {
-            const imageObserver = new IntersectionObserver(function(entries, observer) {
-                entries.forEach(function(entry) {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        loadLazyImage(img);
-                        observer.unobserve(img);
-                    }
-                });
-            }, {
-                rootMargin: '25px', // Start loading 25px before visible
-                threshold: 0.1
-            });
-
-            lazyImages.forEach(function(img) {
-                imageObserver.observe(img);
-            });
-        } else {
-            // Fallback for older browsers
-            lazyImages.forEach(function(img) {
-                loadLazyImage(img);
-            });
-        }
-    }
-
-    /**
-     * Load a lazy image
-     * 
-     * @param {Element} img Image element to load
-     */
-    function loadLazyImage(img) {
-        const src = img.getAttribute('data-src');
-        
-        if (!src) {
-            return;
-        }
-
-        // Add loading class
-        img.classList.add('mixcloud-artwork-loading');
-        
-        // Create a new image to preload
-        const tempImg = new Image();
-        
-        tempImg.onload = function() {
-            img.src = src;
-            img.classList.remove('mixcloud-artwork-loading');
-            img.classList.add('mixcloud-artwork-loaded');
-            img.removeAttribute('data-src');
-        };
-        
-        tempImg.onerror = function() {
-            img.classList.remove('mixcloud-artwork-loading');
-            handleImageError(img);
-        };
-        
-        tempImg.src = src;
-    }
-
-    /**
-     * Handle artwork loading errors
-     */
-    function handleArtworkErrors() {
-        const artworks = document.querySelectorAll('.mixcloud-artwork');
-        
-        artworks.forEach(function(img) {
-            img.addEventListener('error', function() {
-                handleImageError(img);
-            }, { once: true });
-        });
-    }
-
-    /**
-     * Handle individual image error
-     * 
-     * @param {Element} img Image element that failed to load
-     */
-    function handleImageError(img) {
-        const wrapper = img.parentElement;
-        img.style.display = 'none';
-        
-        const placeholder = document.createElement('div');
-        placeholder.className = 'mixcloud-artwork-error';
-        placeholder.innerHTML = '<span class="dashicons dashicons-format-audio"></span>';
-        placeholder.setAttribute('aria-label', wpMixcloudArchives.noArtworkText);
-        
-        wrapper.appendChild(placeholder);
-    }
-
-    
-    /**
-     * Request cache for deduplication
-     */
-    const activeRequests = new Map();
-    
-    /**
-     * Cross-browser AJAX request helper with timeout and retry logic
-     * Falls back to XMLHttpRequest for older Safari versions
-     * 
-     * @param {string} url Request URL
-     * @param {Object} data Request data
-     * @param {Object} options Request options (timeout, retries, signal)
-     * @returns {Promise} Promise that resolves to response data
-     */
-    function makeAjaxRequest(url, data, options = {}) {
-        const {
-            timeout = 10000,
-            retries = 2,
-            signal
-        } = options;
-        
-        // Check if fetch is available (Safari 10.1+)
-        if (typeof fetch !== 'undefined' && typeof AbortController !== 'undefined') {
-            return makeFetchRequest(url, data, options);
-        } else {
-            // Fallback to XMLHttpRequest for older browsers
-            return makeXHRRequest(url, data, options);
-        }
-    }
-    
-    /**
-     * Modern fetch-based request
-     */
-    async function makeFetchRequest(url, data, options = {}) {
-        const {
-            timeout = 10000,
-            retries = 2,
-            signal
-        } = options;
-        
-        let lastError;
-        
-        for (let attempt = 0; attempt <= retries; attempt++) {
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), timeout);
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams(data),
-                    signal: signal || controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const responseData = await response.json();
-                return responseData;
-                
-            } catch (error) {
-                lastError = error;
-                
-                // Don't retry on abort
-                if (error.name === 'AbortError') {
-                    throw error;
-                }
-                
-                // Don't retry on final attempt
-                if (attempt === retries) {
-                    throw error;
-                }
-                
-                // Wait before retry with exponential backoff
-                const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
-                await new Promise(resolve => setTimeout(resolve, delay));
+        // Close dropdown when clicking outside
+        $(document).on('click.wpmixcloud-dropdown', function(e) {
+            if (!$(e.target).closest('.mixcloud-custom-dropdown').length) {
+                $('.mixcloud-custom-dropdown').removeClass('open');
+                $('.mixcloud-dropdown-options').hide();
+                $('.mixcloud-dropdown-selected').attr('aria-expanded', 'false');
+                $('.mixcloud-dropdown-options').attr('aria-hidden', 'true');
             }
-        }
-        
-        throw lastError;
-    }
-    
-    /**
-     * XMLHttpRequest fallback for older browsers
-     */
-    function makeXHRRequest(url, data, options = {}) {
-        const {
-            timeout = 10000,
-            retries = 2
-        } = options;
-        
-        return new Promise((resolve, reject) => {
-            let attempt = 0;
-            
-            function tryRequest() {
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', url, true);
-                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                xhr.timeout = timeout;
-                
-                xhr.onload = function() {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        try {
-                            const responseData = JSON.parse(xhr.responseText);
-                            resolve(responseData);
-                        } catch (e) {
-                            reject(new Error('Invalid JSON response'));
-                        }
-                    } else {
-                        const error = new Error(`HTTP ${xhr.status}: ${xhr.statusText}`);
-                        handleError(error);
-                    }
-                };
-                
-                xhr.onerror = function() {
-                    handleError(new Error('Network error'));
-                };
-                
-                xhr.ontimeout = function() {
-                    handleError(new Error('Request timeout'));
-                };
-                
-                function handleError(error) {
-                    if (attempt < retries) {
-                        attempt++;
-                        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-                        setTimeout(tryRequest, delay);
-                    } else {
-                        reject(error);
-                    }
-                }
-                
-                // Convert data object to form-encoded string
-                const formData = Object.keys(data).map(key => 
-                    encodeURIComponent(key) + '=' + encodeURIComponent(data[key])
-                ).join('&');
-                
-                xhr.send(formData);
-            }
-            
-            tryRequest();
         });
-    }
-    
-    
-    
-    /**
-     * Initialize social sharing functionality
-     */
-    function initSocialSharing() {
-        const socialButtons = document.querySelectorAll('.mixcloud-social-btn');
         
-        socialButtons.forEach(function(button) {
-            button.addEventListener('click', function(e) {
+        // Keyboard navigation for accessibility
+        $(document).on('keydown.wpmixcloud-dropdown', '.mixcloud-dropdown-selected', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                
-                const platform = this.getAttribute('data-platform');
-                const container = this.closest('.mixcloud-social-sharing');
-                
-                if (!container) return;
-                
-                const url = container.getAttribute('data-url');
-                const title = container.getAttribute('data-title');
-                const description = container.getAttribute('data-description');
-                
-                handleSocialShare(platform, url, title, description, this);
-            });
+                $(this).click();
+            }
+        });
+        
+        $(document).on('keydown.wpmixcloud-dropdown', '.mixcloud-dropdown-option', function(e) {
+            const $options = $(this).closest('.mixcloud-dropdown-options');
+            const $allOptions = $options.find('.mixcloud-dropdown-option');
+            const currentIndex = $allOptions.index(this);
+            
+            switch(e.key) {
+                case 'Enter':
+                case ' ':
+                    e.preventDefault();
+                    $(this).click();
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    const nextIndex = (currentIndex + 1) % $allOptions.length;
+                    $allOptions.eq(nextIndex).focus();
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    const prevIndex = (currentIndex - 1 + $allOptions.length) % $allOptions.length;
+                    $allOptions.eq(prevIndex).focus();
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    const $dropdown = $(this).closest('.mixcloud-custom-dropdown');
+                    $dropdown.removeClass('open');
+                    $options.hide();
+                    $dropdown.find('.mixcloud-dropdown-selected').focus();
+                    break;
+            }
         });
     }
     
     /**
-     * Handle social sharing for different platforms
-     * 
-     * @param {string} platform Platform name
-     * @param {string} url URL to share
-     * @param {string} title Title to share
-     * @param {string} description Description to share
-     * @param {Element} button Button element that was clicked
+     * Apply show filter based on selected value
      */
-    function handleSocialShare(platform, url, title, description, button) {
-        let shareUrl = '';
+    function applyShowFilter(filterValue) {
+        const $listItems = $('.mixcloud-list-item');
         
-        switch (platform) {
-            case 'facebook':
-                shareUrl = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
-                break;
-                
-            case 'twitter':
-                const twitterText = title + ' - ' + description;
-                shareUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(twitterText) + '&url=' + encodeURIComponent(url);
-                break;
-                
-            case 'bluesky':
-                const blueskyText = title + ' - ' + description + ' ' + url;
-                shareUrl = 'https://bsky.app/intent/compose?text=' + encodeURIComponent(blueskyText);
-                break;
-                
-            case 'copy':
-                copyToClipboard(url, button);
-                return; // Don't open a window for copy
-        }
-        
-        if (shareUrl) {
-            // Track the share event
-            if (typeof gtag !== 'undefined') {
-                gtag('event', 'share', {
-                    method: platform,
-                    content_type: 'mixcloud_track',
-                    content_id: url
-                });
-            }
-            
-            // Open share dialog
-            const popup = window.open(
-                shareUrl,
-                'social-share',
-                'width=600,height=400,scrollbars=yes,resizable=yes'
-            );
-            
-            // Focus the popup if it was successfully opened
-            if (popup) {
-                popup.focus();
-            }
-        }
-    }
-    
-    /**
-     * Copy URL to clipboard
-     * 
-     * @param {string} url URL to copy
-     * @param {Element} button Button element
-     */
-    function copyToClipboard(url, button) {
-        if (navigator.clipboard && window.isSecureContext) {
-            // Use modern clipboard API
-            navigator.clipboard.writeText(url).then(function() {
-                showCopySuccess(button);
-            }).catch(function(err) {
-                fallbackCopyToClipboard(url, button);
-            });
+        if (filterValue === 'all') {
+            // Show all items
+            $listItems.show();
         } else {
-            // Fallback for older browsers
-            fallbackCopyToClipboard(url, button);
-        }
-    }
-    
-    /**
-     * Fallback copy method for older browsers
-     * 
-     * @param {string} url URL to copy
-     * @param {Element} button Button element
-     */
-    function fallbackCopyToClipboard(url, button) {
-        const textArea = document.createElement('textarea');
-        textArea.value = url;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        
-        try {
-            const successful = document.execCommand('copy');
-            if (successful) {
-                showCopySuccess(button);
-            } else {
-                showCopyError(button);
-            }
-        } catch (err) {
-            showCopyError(button);
-        }
-        
-        document.body.removeChild(textArea);
-    }
-    
-    /**
-     * Show copy success feedback
-     * 
-     * @param {Element} button Button element
-     */
-    function showCopySuccess(button) {
-        const originalHTML = button.innerHTML;
-        const originalClass = button.className;
-        
-        button.classList.add('copied');
-        button.innerHTML = '<span class="dashicons dashicons-yes"></span><span class="mixcloud-social-label">Copied!</span>';
-        
-        // Track the copy event
-        if (typeof gtag !== 'undefined') {
-            gtag('event', 'copy_link', {
-                event_category: 'social_sharing',
-                event_label: 'mixcloud_track'
+            // Filter items by show title
+            $listItems.each(function() {
+                const $item = $(this);
+                const title = $item.find('.mixcloud-list-title').text();
+                
+                // Normalize title for comparison (convert en dash and bullet to regular dash)
+                const normalizedTitle = title.replace(/[–•]/g, '-');
+                const normalizedFilter = filterValue.replace(/[–•]/g, '-');
+                
+                if (normalizedTitle.toLowerCase().includes(normalizedFilter.toLowerCase())) {
+                    $item.show();
+                } else {
+                    $item.hide();
+                }
             });
         }
         
-        setTimeout(function() {
-            button.className = originalClass;
-            button.innerHTML = originalHTML;
-        }, 2000);
+        // Trigger custom event for other scripts
+        $(document).trigger('wp-mixcloud-filter-applied', [filterValue]);
     }
-    
+
     /**
-     * Show copy error feedback
-     * 
-     * @param {Element} button Button element
+     * Initialize immediately and handle various loading scenarios
      */
-    function showCopyError(button) {
-        const originalHTML = button.innerHTML;
-        
-        button.innerHTML = '<span class="dashicons dashicons-no"></span><span class="mixcloud-social-label">Failed</span>';
-        
-        setTimeout(function() {
-            button.innerHTML = originalHTML;
-        }, 2000);
-    }
-    
-    /**
-     * Initialize all functionality when DOM is ready
-     */
-    function init() {
+    function initializePlugin() {
         initMixcloudPlayers();
         initFilters();
-        initLazyLoadingImages();
-        initPlayCountAnimations();
-        handleArtworkErrors();
-        initSocialSharing();
     }
-
-    // AIDEV-NOTE: Use jQuery document ready for theme compatibility
-    $(document).ready(function() {
-        // Small delay to ensure theme scripts have initialized
-        setTimeout(init, 100);
+    
+    // Multiple initialization strategies to ensure the plugin works
+    // 1. Immediate execution (in case DOM is already ready)
+    if (document.readyState === 'loading') {
+        // DOM is still loading
+        $(document).ready(initializePlugin);
+    } else {
+        // DOM is already ready
+        initializePlugin();
+    }
+    
+    // 2. DOM ready event (standard)
+    $(document).ready(initializePlugin);
+    
+    // 3. Window load event (everything including images loaded)
+    $(window).on('load', initializePlugin);
+    
+    // 4. Delayed initialization to catch late-loaded content
+    setTimeout(initializePlugin, 100);
+    setTimeout(initializePlugin, 500);
+    setTimeout(initializePlugin, 1000);
+    
+    // 5. Watch for AJAX content updates
+    $(document).on('wp-mixcloud-refresh', initializePlugin);
+    
+    // 6. Watch for DOM mutations (dynamically added content)
+    if (window.MutationObserver) {
+        var observer = new MutationObserver(function(mutations) {
+            var shouldReinit = false;
+            mutations.forEach(function(mutation) {
+                if (mutation.addedNodes.length) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1 && ($(node).hasClass('mixcloud-play-button') || $(node).find('.mixcloud-play-button').length)) {
+                            shouldReinit = true;
+                        }
+                    });
+                }
+            });
+            if (shouldReinit) {
+                setTimeout(initMixcloudPlayers, 100);
+            }
+        });
+        
+        // Start observing when DOM is ready
+        $(document).ready(function() {
+            if (document.body) {
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+            }
+        });
+    }
+    
+    // 7. Global refresh function for external use
+    window.wpMixcloudArchivesRefresh = initializePlugin;
+    
+    // 8. Force initialization on any user interaction (failsafe)
+    $(document).one('click touchstart', function() {
+        setTimeout(initializePlugin, 50);
     });
 
-    // Re-initialize on AJAX content updates (for compatibility with page builders)
-    $(document).on('wp-mixcloud-archives-refresh', init);
-
-})(window.jQuery);
-
-// Expose refresh function for external use
-window.wpMixcloudArchivesRefresh = function() {
-    jQuery(document).trigger('wp-mixcloud-archives-refresh');
-};
+})(jQuery);

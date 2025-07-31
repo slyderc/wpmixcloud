@@ -80,17 +80,17 @@ class WP_Mixcloud_Archives_HTML_Generator {
     public function generate_cloudcast_html($cloudcast, $options = array()) {
         $html = '<div class="mixcloud-list-item" data-cloudcast-key="' . esc_attr($cloudcast['key']) . '">';
         
-        // Thumbnail with play button
+        // Thumbnail with hover play button
         $html .= $this->generate_thumbnail_html($cloudcast);
         
-        // Content area
+        // Content area with simplified info
         $html .= '<div class="mixcloud-list-content">';
         
-        // Title and account info
-        $html .= $this->generate_header_html($cloudcast, $options);
+        // Title
+        $html .= '<div class="mixcloud-list-title">' . esc_html($cloudcast['name']) . '</div>';
         
-        // Waveform area (empty by default, player appears here when activated)
-        $html .= '<div class="mixcloud-list-waveform"></div>';
+        // Duration and published time
+        $html .= $this->generate_metadata_html($cloudcast);
         
         $html .= '</div>'; // .mixcloud-list-content
         
@@ -105,7 +105,7 @@ class WP_Mixcloud_Archives_HTML_Generator {
     }
     
     /**
-     * Generate thumbnail HTML with play button
+     * Generate thumbnail HTML with hover play button
      *
      * @param array $cloudcast Cloudcast data
      * @return string          Thumbnail HTML
@@ -122,12 +122,20 @@ class WP_Mixcloud_Archives_HTML_Generator {
             $html .= '<div class="mixcloud-list-thumbnail-fallback"><span class="dashicons dashicons-format-audio"></span></div>';
         }
         
-        // Play button
-        $html .= '<button class="mixcloud-play-button" data-cloudcast-key="' . esc_attr($cloudcast['key']) . '" data-cloudcast-url="' . esc_url($cloudcast['url']) . '" data-cloudcast-name="' . esc_attr($cloudcast['name']) . '" aria-label="' . esc_attr__('Play', 'wp-mixcloud-archives') . '">';
-        $html .= '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">';
+        // Hover play button overlay
+        $html .= '<div class="mixcloud-play-overlay">';
+        $html .= '<button class="mixcloud-play-button" ';
+        $html .= 'data-cloudcast-key="' . esc_attr($cloudcast['key']) . '" ';
+        $html .= 'data-cloudcast-url="' . esc_url($cloudcast['url']) . '" ';
+        $html .= 'data-cloudcast-name="' . esc_attr($cloudcast['name']) . '" ';
+        $html .= 'data-cloudcast-image="' . esc_attr($thumbnail_url) . '" ';
+        $html .= 'aria-label="' . esc_attr__('Play', 'wp-mixcloud-archives') . '">';
+        $html .= '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">';
         $html .= '<path d="M5 3L19 12L5 21V3Z" fill="white"/>';
         $html .= '</svg>';
+        $html .= '<span class="mixcloud-play-text">PLAY</span>';
         $html .= '</button>';
+        $html .= '</div>';
         
         $html .= '</div>';
         
@@ -158,32 +166,30 @@ class WP_Mixcloud_Archives_HTML_Generator {
     }
     
     /**
-     * Generate header HTML with title and metadata
+     * Generate metadata HTML with duration and published time
      *
      * @param array $cloudcast Cloudcast data
-     * @param array $options   Display options
-     * @return string          Header HTML
+     * @return string          Metadata HTML
      */
-    private function generate_header_html($cloudcast, $options) {
-        $html = '<div class="mixcloud-list-header">';
-        $html .= '<h3 class="mixcloud-list-title" style="color: #FFFFFF !important; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;">';
-        $html .= esc_html($cloudcast['name']);
-        $html .= '</h3>';
+    private function generate_metadata_html($cloudcast) {
+        $html = '<div class="mixcloud-list-metadata">';
         
-        // Date and duration
-        $date_display = $this->get_relative_date_display($cloudcast['created_time']);
+        // Duration
         $duration = '';
         if (!empty($cloudcast['audio_length']) && $cloudcast['audio_length'] > 0) {
             $duration = $this->format_duration($cloudcast['audio_length']);
         }
         
-        $html .= '<div class="mixcloud-list-subtitle" style="color: #A0A0A0 !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;">';
+        // Published time
+        $date_display = $this->get_relative_date_display($cloudcast['created_time']);
+        
         if (!empty($duration)) {
-            $html .= sprintf('%s • %s', esc_html($duration), esc_html($date_display));
-        } else {
-            $html .= esc_html($date_display);
+            $html .= '<span class="mixcloud-duration">' . esc_html($duration) . '</span>';
+            $html .= '<span class="mixcloud-separator">•</span>';
         }
-        $html .= '</div>';
+        
+        $html .= '<span class="mixcloud-published">' . esc_html($date_display) . '</span>';
+        
         $html .= '</div>';
         
         return $html;
@@ -457,8 +463,16 @@ class WP_Mixcloud_Archives_HTML_Generator {
      */
     private function generate_player_modal_html() {
         $html = '<div id="mixcloud-player-modal" class="mixcloud-modal">';
+        $html .= '<div class="mixcloud-modal-overlay"></div>';
         $html .= '<div class="mixcloud-modal-content">';
-        $html .= '<span class="mixcloud-modal-close">&times;</span>';
+        $html .= '<button class="mixcloud-modal-close" aria-label="' . esc_attr__('Close player', 'wp-mixcloud-archives') . '">';
+        $html .= '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">';
+        $html .= '<path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+        $html .= '</svg>';
+        $html .= '</button>';
+        $html .= '<div class="mixcloud-modal-image-container">';
+        $html .= '<img class="mixcloud-modal-image" src="" alt="" />';
+        $html .= '</div>';
         $html .= '<div class="mixcloud-modal-player-container"></div>';
         $html .= '</div>';
         $html .= '</div>';

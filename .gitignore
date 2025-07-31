@@ -83,6 +83,9 @@ composer.phar
 .git/
 .gitattributes
 
+# Crush AI assistant directory
+.crush/
+
 # AIDEV-NOTE: Keep minified assets in git for production deployment
 # These are built by our build system but needed for plugin distribution
 # assets/css/style.min.css
